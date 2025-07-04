@@ -1,12 +1,12 @@
+
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { TONConnectButton } from "@/components/TONConnectButton";
 import { BalanceCard } from "@/components/BalanceCard";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { User, Phone, Calendar, Wallet, History, Settings, Car, DollarSign } from "lucide-react";
+import { User, Phone, Calendar, Wallet, History, Car, DollarSign } from "lucide-react";
 
 const Profile = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -68,26 +68,6 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Balance Cards */}
-        <div className="mb-8 animate-fade-in">
-          <div className="grid gap-4 mb-6">
-            <BalanceCard 
-              title="На поездки"
-              amount={1250}
-              currency="бонусов"
-              icon={Car}
-              gradient="from-blue-500 to-cyan-500"
-            />
-            <BalanceCard 
-              title="Баланс"
-              amount={500}
-              currency="₽"
-              icon={DollarSign}
-              gradient="from-green-500 to-emerald-500"
-            />
-          </div>
-        </div>
-
         {/* User Info */}
         <Card className="glass-card p-4 mb-6">
           <div className="flex items-center gap-4 mb-4">
@@ -115,6 +95,26 @@ const Profile = () => {
             </div>
           </div>
         </Card>
+
+        {/* Balance Cards */}
+        <div className="mb-8 animate-fade-in">
+          <div className="grid gap-4 mb-6">
+            <BalanceCard 
+              title="На поездки"
+              amount={1250}
+              currency="бонусов"
+              icon={Car}
+              gradient="from-blue-500 to-cyan-500"
+            />
+            <BalanceCard 
+              title="Баланс"
+              amount={500}
+              currency="₽"
+              icon={DollarSign}
+              gradient="from-green-500 to-emerald-500"
+            />
+          </div>
+        </div>
 
         {/* Statistics */}
         <Card className="glass-card p-4 mb-6">
@@ -181,14 +181,6 @@ const Profile = () => {
               </div>
             ))}
           </div>
-        </Card>
-
-        {/* Settings */}
-        <Card className="glass-card p-4 mb-6">
-          <Button variant="ghost" className="w-full justify-start">
-            <Settings className="w-5 h-5 mr-3" />
-            Настройки
-          </Button>
         </Card>
       </div>
 

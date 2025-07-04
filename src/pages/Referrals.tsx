@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
@@ -11,8 +12,8 @@ const Referrals = () => {
   
   const referralStats = {
     totalReferrals: 5,
-    totalEarned: 0.15,
-    pendingRewards: 0.08
+    totalEarned: 150,
+    pendingRewards: 80
   };
 
   const referralLink = "https://t.me/TonTripBonanzaBot?ref=123456";
@@ -22,14 +23,14 @@ const Referrals = () => {
       id: 1,
       username: "user123",
       joinDate: "2024-01-10",
-      reward: 0.03,
+      reward: 30,
       status: "active"
     },
     {
       id: 2,
       username: "crypto_lover",
       joinDate: "2024-01-08",
-      reward: 0.05,
+      reward: 50,
       status: "active"
     }
   ];
@@ -72,13 +73,13 @@ const Referrals = () => {
             <div className="text-2xl font-bold text-green-400 mb-1">
               {referralStats.totalEarned}
             </div>
-            <div className="text-xs text-muted-foreground">TON заработано</div>
+            <div className="text-xs text-muted-foreground">₽ заработано</div>
           </Card>
           <Card className="glass-card p-3 text-center">
             <div className="text-2xl font-bold text-yellow-400 mb-1">
               {referralStats.pendingRewards}
             </div>
-            <div className="text-xs text-muted-foreground">В ожидании</div>
+            <div className="text-xs text-muted-foreground">₽ в ожидании</div>
           </Card>
         </div>
 
@@ -141,7 +142,7 @@ const Referrals = () => {
           </div>
           <div className="space-y-2 text-sm text-muted-foreground">
             <p>• Получайте 3% с каждой покупки рефералом</p>
-            <p>• Минимальная сумма для вывода: 0.1 TON</p>
+            <p>• Минимальная сумма для вывода: 100 ₽</p>
             <p>• Вывод доступен через 1 год после получения</p>
             <p>• Необходимо иметь бонусные и партнерские карты</p>
           </div>
@@ -159,7 +160,7 @@ const Referrals = () => {
                     <span className="text-sm font-medium">@{referral.username}</span>
                   </div>
                   <Badge className="bg-green-500 text-white">
-                    +{referral.reward} TON
+                    +{referral.reward} ₽
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
