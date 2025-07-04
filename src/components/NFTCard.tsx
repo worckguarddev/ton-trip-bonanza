@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Wallet } from "lucide-react";
+import { Wallet } from "lucide-react";
 
 interface NFTCardProps {
   id: string;
@@ -64,10 +64,6 @@ export const NFTCard = ({
           <p className="text-sm text-muted-foreground mb-3">{description}</p>
           <div className="flex items-center justify-between">
             <span className="text-xl font-bold gradient-text">{price} ₽</span>
-            <Button size="sm" variant="outline">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Getgems
-            </Button>
           </div>
         </div>
 
