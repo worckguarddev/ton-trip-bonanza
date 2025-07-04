@@ -1,12 +1,11 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Wallet, Gift, Car, Users, User } from "lucide-react";
+import { Gift, Car, Users, User } from "lucide-react";
 
 export const Navigation = () => {
   const location = useLocation();
 
   const navItems = [
-    { icon: Wallet, label: "Главная", path: "/" },
     { icon: Gift, label: "Карты", path: "/cards" },
     { icon: Car, label: "Поездки", path: "/trips" },
     { icon: Users, label: "Рефералы", path: "/referrals" },

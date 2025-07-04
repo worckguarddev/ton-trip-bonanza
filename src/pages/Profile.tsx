@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { TONConnectButton } from "@/components/TONConnectButton";
+import { BalanceCard } from "@/components/BalanceCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Phone, Calendar, Wallet, History, Settings } from "lucide-react";
+import { ArrowLeft, User, Phone, Calendar, Wallet, History, Settings, Car, Ruble } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Profile = () => {
@@ -23,8 +24,8 @@ const Profile = () => {
 
   const userStats = {
     totalCards: 5,
-    totalEarned: 0.25,
-    totalSpent: 0.15,
+    totalEarned: 250,
+    totalSpent: 150,
     referrals: 3
   };
 
@@ -33,14 +34,14 @@ const Profile = () => {
       id: 1,
       type: "purchase",
       description: "Покупка NFT карты",
-      amount: -0.1,
+      amount: -100,
       date: "2024-01-15"
     },
     {
       id: 2,
       type: "referral",
       description: "Бонус за реферала",
-      amount: +0.03,
+      amount: +30,
       date: "2024-01-14"
     },
     {
@@ -58,12 +59,32 @@ const Profile = () => {
       <div className="container mx-auto px-4 py-6 max-w-md">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Link to="/">
+          <Link to="/cards">
             <Button variant="ghost" size="sm" className="w-10 h-10 rounded-full p-0">
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
           <h1 className="text-2xl font-bold">Профиль</h1>
+        </div>
+
+        {/* Balance Cards */}
+        <div className="mb-8 animate-fade-in">
+          <div className="grid gap-4 mb-6">
+            <BalanceCard 
+              title="На поездки"
+              amount={1250}
+              currency="бонусов"
+              icon={Car}
+              gradient="from-blue-500 to-cyan-500"
+            />
+            <BalanceCard 
+              title="Баланс"
+              amount={500}
+              currency="₽"
+              icon={Ruble}
+              gradient="from-green-500 to-emerald-500"
+            />
+          </div>
         </div>
 
         {/* User Info */}
@@ -107,11 +128,11 @@ const Profile = () => {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-400">{userStats.totalEarned}</div>
-              <div className="text-xs text-muted-foreground">TON заработано</div>
+              <div className="text-xs text-muted-foreground">₽ заработано</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400">{userStats.totalSpent}</div>
-              <div className="text-xs text-muted-foreground">TON потрачено</div>
+              <div className="text-xs text-muted-foreground">₽ потрачено</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-400">{userStats.referrals}</div>
@@ -151,7 +172,7 @@ const Profile = () => {
                       {transaction.amount > 0 ? '+' : ''}{transaction.amount}
                     </span>
                     <span className="text-xs ml-1">
-                      {transaction.currency || 'TON'}
+                      {transaction.currency || '₽'}
                     </span>
                   </div>
                 </div>
