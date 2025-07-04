@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Phone, Calendar, Wallet, History, Settings, Car, Ruble } from "lucide-react";
+import { ArrowLeft, User, Phone, Calendar, Wallet, History, Settings, Car, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Profile = () => {
