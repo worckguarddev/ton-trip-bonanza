@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { TONConnectButton } from "@/components/TONConnectButton";
@@ -7,15 +6,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, User, Phone, Calendar, Wallet, History, Settings, Car, DollarSign } from "lucide-react";
-import { Link } from "react-router-dom";
+import { User, Phone, Calendar, Wallet, History, Settings, Car, DollarSign } from "lucide-react";
 
 const Profile = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   
   const userInfo = {
     firstName: "Иван",
-    lastName: "Петров",
+    lastName: "Петров", 
     username: "@ivan_petrov",
     phone: "+7 (999) 123-45-67",
     joinDate: "2024-01-01",
@@ -58,13 +56,16 @@ const Profile = () => {
     <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white pb-20">
       <div className="container mx-auto px-4 py-6 max-w-md">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link to="/cards">
-            <Button variant="ghost" size="sm" className="w-10 h-10 rounded-full p-0">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold">Профиль</h1>
+        <div className="flex items-center justify-center mb-6 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-2xl p-4 border border-purple-500/20">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold gradient-text">Профиль</h1>
+              <p className="text-xs text-muted-foreground">Ваши данные и статистика</p>
+            </div>
+          </div>
         </div>
 
         {/* Balance Cards */}

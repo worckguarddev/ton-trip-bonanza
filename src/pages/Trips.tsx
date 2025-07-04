@@ -1,10 +1,8 @@
-
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Car, MapPin, Clock, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Car, MapPin, Clock, ExternalLink } from "lucide-react";
 
 const Trips = () => {
   const availableBonuses = 1250;
@@ -13,7 +11,7 @@ const Trips = () => {
     {
       id: 1,
       from: "Центр города",
-      to: "Аэропорт",
+      to: "Аэропорт", 
       date: "2024-01-15",
       bonusesUsed: 200,
       status: "completed"
@@ -32,13 +30,16 @@ const Trips = () => {
     <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white pb-20">
       <div className="container mx-auto px-4 py-6 max-w-md">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="w-10 h-10 rounded-full p-0">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold">Бонусные поездки</h1>
+        <div className="flex items-center justify-center mb-6 bg-gradient-to-r from-orange-600/20 to-yellow-600/20 rounded-2xl p-4 border border-orange-500/20">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full flex items-center justify-center">
+              <Car className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold gradient-text">Бонусные поездки</h1>
+              <p className="text-xs text-muted-foreground">Используйте бонусы для поездок</p>
+            </div>
+          </div>
         </div>
 
         {/* Available Bonuses */}
