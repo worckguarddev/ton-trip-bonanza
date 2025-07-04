@@ -81,7 +81,7 @@ const Profile = () => {
               title="Баланс"
               amount={500}
               currency="₽"
-              icon={Ruble}
+              icon={DollarSign}
               gradient="from-green-500 to-emerald-500"
             />
           </div>
