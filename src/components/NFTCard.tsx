@@ -63,7 +63,7 @@ export const NFTCard = ({
           <h3 className="font-bold text-lg mb-2">{title}</h3>
           <p className="text-sm text-muted-foreground mb-3">{description}</p>
           <div className="flex items-center justify-between">
-            <span className="text-xl font-bold gradient-text">{price} TON</span>
+            <span className="text-xl font-bold gradient-text">{price} ₽</span>
             <Button size="sm" variant="outline">
               <ExternalLink className="w-4 h-4 mr-2" />
               Getgems
