@@ -1,31 +1,57 @@
 
 import { useState } from "react";
 import { Navigation } from "@/components/Navigation";
+import { TONConnectButton } from "@/components/TONConnectButton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Wallet, User, Settings, Shield, ExternalLink } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, User, Phone, Calendar, Wallet, History, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Profile = () => {
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
   
   const userInfo = {
-    id: "123456789",
-    username: "crypto_user",
-    firstName: "Александр",
-    walletAddress: walletConnected ? "EQBoMnDj6u1IJWTFGMnlr_Tx5YRXs--aiKyktlOQLyziWJu3" : null
+    firstName: "Иван",
+    lastName: "Петров",
+    username: "@ivan_petrov",
+    phone: "+7 (999) 123-45-67",
+    joinDate: "2024-01-01",
+    referralCode: "REF123456"
   };
 
-  const connectWallet = () => {
-    // В реальном приложении здесь будет интеграция с TON Connect
-    setWalletConnected(true);
+  const userStats = {
+    totalCards: 5,
+    totalEarned: 0.25,
+    totalSpent: 0.15,
+    referrals: 3
   };
 
-  const disconnectWallet = () => {
-    setWalletConnected(false);
-  };
+  const recentTransactions = [
+    {
+      id: 1,
+      type: "purchase",
+      description: "Покупка NFT карты",
+      amount: -0.1,
+      date: "2024-01-15"
+    },
+    {
+      id: 2,
+      type: "referral",
+      description: "Бонус за реферала",
+      amount: +0.03,
+      date: "2024-01-14"
+    },
+    {
+      id: 3,
+      type: "bonus",
+      description: "Начисление бонусов",
+      amount: +150,
+      date: "2024-01-13",
+      currency: "бонусов"
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white pb-20">
@@ -41,127 +67,106 @@ const Profile = () => {
         </div>
 
         {/* User Info */}
-        <Card className="glass-card p-4 mb-6 animate-fade-in">
+        <Card className="glass-card p-4 mb-6">
           <div className="flex items-center gap-4 mb-4">
             <div className="w-16 h-16 bg-gradient-ton rounded-full flex items-center justify-center">
               <User className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold">{userInfo.firstName}</h2>
-              <p className="text-sm text-muted-foreground">@{userInfo.username}</p>
-              <p className="text-xs text-muted-foreground">ID: {userInfo.id}</p>
+              <h2 className="text-xl font-bold">{userInfo.firstName} {userInfo.lastName}</h2>
+              <p className="text-muted-foreground">{userInfo.username}</p>
             </div>
-          </div>
-        </Card>
-
-        {/* Wallet Section */}
-        <Card className="glass-card p-4 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Wallet className="w-5 h-5 text-ton-blue" />
-            <h3 className="font-semibold">TON Кошелёк</h3>
           </div>
           
-          {walletConnected ? (
-            <div>
-              <div className="bg-black/20 rounded-lg p-3 mb-4">
-                <p className="text-xs font-mono break-all text-muted-foreground">
-                  {userInfo.walletAddress}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={disconnectWallet}>
-                  Отвязать адрес
-                </Button>
-                <Button variant="outline" size="sm">
-                  <ExternalLink className="w-4 h-4" />
-                </Button>
-              </div>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center gap-3">
+              <Phone className="w-4 h-4 text-muted-foreground" />
+              <span>{userInfo.phone}</span>
             </div>
-          ) : (
-            <div>
-              <p className="text-sm text-muted-foreground mb-4">
-                Подключите кошелёк для вывода карт и управления средствами
-              </p>
-              <Button className="w-full bg-gradient-ton" onClick={connectWallet}>
-                Подключить TON Connect
-              </Button>
+            <div className="flex items-center gap-3">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <span>В проекте с {new Date(userInfo.joinDate).toLocaleDateString('ru-RU')}</span>
             </div>
-          )}
+            <div className="flex items-center gap-3">
+              <span className="text-muted-foreground">Реферальный код:</span>
+              <Badge variant="outline">{userInfo.referralCode}</Badge>
+            </div>
+          </div>
         </Card>
 
-        {/* Account Stats */}
+        {/* Statistics */}
         <Card className="glass-card p-4 mb-6">
-          <h3 className="font-semibold mb-4">Статистика аккаунта</h3>
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Wallet className="w-5 h-5" />
+            Статистика
+          </h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold gradient-text mb-1">12</div>
-              <div className="text-xs text-muted-foreground">NFT карт</div>
+              <div className="text-2xl font-bold gradient-text">{userStats.totalCards}</div>
+              <div className="text-xs text-muted-foreground">Карт в коллекции</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-400 mb-1">3</div>
-              <div className="text-xs text-muted-foreground">Бонусных карт</div>
+              <div className="text-2xl font-bold text-green-400">{userStats.totalEarned}</div>
+              <div className="text-xs text-muted-foreground">TON заработано</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-400 mb-1">5</div>
+              <div className="text-2xl font-bold text-red-400">{userStats.totalSpent}</div>
+              <div className="text-xs text-muted-foreground">TON потрачено</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-400">{userStats.referrals}</div>
               <div className="text-xs text-muted-foreground">Рефералов</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-400 mb-1">48</div>
-              <div className="text-xs text-muted-foreground">Поездок</div>
-            </div>
+          </div>
+        </Card>
+
+        {/* TON Wallet */}
+        <div className="mb-6">
+          <TONConnectButton
+            isConnected={isWalletConnected}
+            address={isWalletConnected ? "UQBpH-7d8JEH..." : ""}
+            onConnect={() => setIsWalletConnected(true)}
+            onDisconnect={() => setIsWalletConnected(false)}
+          />
+        </div>
+
+        {/* Recent Transactions */}
+        <Card className="glass-card p-4 mb-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <History className="w-5 h-5" />
+            Последние операции
+          </h3>
+          <div className="space-y-3">
+            {recentTransactions.map((transaction, index) => (
+              <div key={transaction.id}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{transaction.description}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(transaction.date).toLocaleDateString('ru-RU')}
+                    </p>
+                  </div>
+                  <div className={`text-right ${transaction.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    <span className="font-bold">
+                      {transaction.amount > 0 ? '+' : ''}{transaction.amount}
+                    </span>
+                    <span className="text-xs ml-1">
+                      {transaction.currency || 'TON'}
+                    </span>
+                  </div>
+                </div>
+                {index < recentTransactions.length - 1 && <Separator className="mt-3" />}
+              </div>
+            ))}
           </div>
         </Card>
 
         {/* Settings */}
         <Card className="glass-card p-4 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Settings className="w-5 h-5 text-muted-foreground" />
-            <h3 className="font-semibold">Настройки</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Уведомления</span>
-              <Badge variant="secondary">Включены</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Автообновление баланса</span>
-              <Badge variant="secondary">Включено</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Приватность профиля</span>
-              <Badge variant="secondary">Публичный</Badge>
-            </div>
-          </div>
-        </Card>
-
-        {/* Admin Access */}
-        {isAdmin && (
-          <Card className="glass-card p-4 mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="w-5 h-5 text-red-400" />
-              <h3 className="font-semibold">Администрирование</h3>
-            </div>
-            <Link to="/admin">
-              <Button variant="outline" className="w-full">
-                Панель администратора
-              </Button>
-            </Link>
-          </Card>
-        )}
-
-        {/* Support */}
-        <Card className="glass-card p-4 mb-6">
-          <h3 className="font-semibold mb-3">Поддержка</h3>
-          <div className="space-y-2">
-            <Button variant="outline" className="w-full justify-start">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Канал поддержки
-            </Button>
-            <Button variant="outline" className="w-full justify-start">
-              <ExternalLink className="w-4 h-4 mr-2" />
-              Чат сообщества
-            </Button>
-          </div>
+          <Button variant="ghost" className="w-full justify-start">
+            <Settings className="w-5 h-5 mr-3" />
+            Настройки
+          </Button>
         </Card>
       </div>
 
