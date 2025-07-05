@@ -130,11 +130,24 @@ export const useReferralSystem = () => {
         return false;
       }
 
-      // Вызываем функцию базы данных для начисления бонуса
-      const { error } = await supabase.rpc('process_referral_bonus', {
-        referrer_id: userInfo.referrer_id,
-        purchase_amount: purchaseAmount
-      });
+      // Рассчитываем 3% от покупки в рублях
+      const bonusAmount = purchaseAmount * 0.03;
+
+      // Получаем текущий баланс реферера
+      const { data: currentBalance } = await supabase
+        .from('user_balances')
+        .select('rub_balance, total_earned')
+        .eq('user_telegram_id', userInfo.referrer_id)
+        .single();
+
+      // Начисляем бонус в рублях
+      const { error } = await supabase
+        .from('user_balances')
+        .update({
+          rub_balance: (currentBalance?.rub_balance || 0) + bonusAmount,
+          total_earned: (currentBalance?.total_earned || 0) + bonusAmount
+        })
+        .eq('user_telegram_id', userInfo.referrer_id);
 
       if (error) throw error;
 
@@ -143,14 +156,15 @@ export const useReferralSystem = () => {
         .from('referrals')
         .update({ 
           status: 'active',
-          bonus_amount: purchaseAmount * 0.03
+          bonus_amount: bonusAmount
         })
         .match({
           referrer_telegram_id: userInfo.referrer_id,
           referred_telegram_id: userId
         });
 
-      console.log(`Referral bonus processed: ${purchaseAmount * 0.03} for referrer ${userInfo.referrer_id}`);
+      console.log(`Referral bonus processed: ${bonusAmount} rubles for referrer ${userInfo.referrer_id}`);
+      toast.success(`Ваш реферер получил ${Math.round(bonusAmount)} рублей за вашу покупку!`);
       return true;
     } catch (err) {
       console.error('Error processing referral bonus:', err);

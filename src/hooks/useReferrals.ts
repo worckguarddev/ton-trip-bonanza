@@ -117,15 +117,15 @@ export const useReferrals = () => {
       // Получаем текущий баланс реферера
       const { data: currentBalance } = await supabase
         .from('user_balances')
-        .select('bonus_points, total_earned')
+        .select('rub_balance, total_earned')
         .eq('user_telegram_id', referrerTelegramId)
         .single();
 
-      // Начисляем бонус рефереру
+      // Начисляем бонус рефереру в рублях
       const { error: bonusError } = await supabase
         .from('user_balances')
         .update({
-          bonus_points: (currentBalance?.bonus_points || 0) + 100,
+          rub_balance: (currentBalance?.rub_balance || 0) + 100,
           total_earned: (currentBalance?.total_earned || 0) + 100
         })
         .eq('user_telegram_id', referrerTelegramId);
@@ -134,7 +134,7 @@ export const useReferrals = () => {
         console.error('Error updating referrer balance:', bonusError);
       }
       
-      toast.success('Реферал добавлен! Вы получили 100 бонусов.');
+      toast.success('Реферал добавлен! Вы получили 100 рублей.');
       return data;
     } catch (err) {
       console.error('Error creating referral:', err);

@@ -98,7 +98,7 @@ const Referrals = () => {
             <div className="text-2xl font-bold text-green-400 mb-1">
               {Math.round(referralStats.totalEarned)}
             </div>
-            <div className="text-xs text-muted-foreground">бонусов заработано</div>
+            <div className="text-xs text-muted-foreground">рублей заработано</div>
           </Card>
           <Card className="glass-card p-3 text-center">
             <div className="text-2xl font-bold text-yellow-400 mb-1">
@@ -116,7 +116,7 @@ const Referrals = () => {
             </div>
             <div>
               <h3 className="font-semibold">Ваша реферальная ссылка</h3>
-              <p className="text-xs text-muted-foreground">Приглашайте друзей и получайте 3% с их покупок</p>
+              <p className="text-xs text-muted-foreground">Приглашайте друзей и получайте 3% с их покупок в рублях</p>
             </div>
           </div>
           
@@ -170,8 +170,8 @@ const Referrals = () => {
             <h3 className="font-semibold">Условия программы</h3>
           </div>
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>• Получайте 3% с каждой покупки рефералом</p>
-            <p>• Бонусы начисляются автоматически</p>
+            <p>• Получайте 3% с каждой покупки рефералом в рублях</p>
+            <p>• Бонусы начисляются автоматически на рублевый баланс</p>
             <p>• Ссылка формата: t.me/bot?startapp=ref_ВашID</p>
             <p>• Один пользователь может быть приглашен только один раз</p>
           </div>
@@ -190,7 +190,7 @@ const Referrals = () => {
                       <span className="text-sm font-medium">ID: {referral.referred_telegram_id}</span>
                     </div>
                     <Badge className="bg-green-500 text-white">
-                      +{Math.round(referral.bonus_amount || 0)} бонусов
+                      +{Math.round(referral.bonus_amount || 0)} рублей
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
