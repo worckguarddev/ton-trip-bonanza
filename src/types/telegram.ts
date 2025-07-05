@@ -24,6 +24,7 @@ export interface TelegramWebApp {
   initDataUnsafe: TelegramInitDataUnsafe;
 }
 
+// Single global declaration to avoid conflicts
 declare global {
   interface Window {
     Telegram?: {
