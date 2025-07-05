@@ -102,7 +102,7 @@ export const TopUpDialog = ({ open, onOpenChange, onTopUp }: TopUpDialogProps) =
               </div>
               
               <div className="mb-4">
-                <QRGenerator url={paymentLink} />
+                <QRGenerator data={paymentLink} />
               </div>
               
               <p className="text-xs text-muted-foreground mb-4">
