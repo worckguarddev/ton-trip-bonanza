@@ -16,6 +16,7 @@ const Index = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscriptionChecked, setSubscriptionChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNavigating, setIsNavigating] = useState(false);
   const navigate = useNavigate();
   
   const { getTelegramProfile, checkSubscription, loading, error } = useTelegramProfile();
@@ -28,6 +29,7 @@ const Index = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
+      console.log('Index: Инициализация приложения...');
       try {
         // Инициализация Telegram WebApp
         if (window.Telegram?.WebApp) {
@@ -36,9 +38,8 @@ const Index = () => {
           
           const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
           if (telegramUser) {
+            console.log('Index: Telegram пользователь найден:', telegramUser);
             setUser(telegramUser);
-            console.log('Telegram пользователь:', telegramUser);
-            console.log('Start param:', window.Telegram.WebApp.initDataUnsafe?.start_param);
             
             // Инициализируем реферальную систему
             await initializeReferralSystem(telegramUser.id);
@@ -46,6 +47,7 @@ const Index = () => {
             // Загружаем профиль пользователя
             await loadTelegramProfile(telegramUser.id);
           } else {
+            console.log('Index: Telegram пользователь не найден, используем тестовые данные');
             // Если пользователь не найден в Telegram WebApp, используем тестовые данные
             const testUser = {
               id: 123456789,
@@ -58,8 +60,8 @@ const Index = () => {
             await loadTelegramProfile(testUser.id);
           }
         } else {
+          console.log('Index: Telegram WebApp не обнаружен, используем тестовые данные');
           // Для тестирования без Telegram WebApp
-          console.log('Telegram WebApp не обнаружен, используем тестовые данные');
           const testUser = {
             id: 123456789,
             first_name: "Тестовый",
@@ -71,9 +73,10 @@ const Index = () => {
           await loadTelegramProfile(testUser.id);
         }
       } catch (err) {
-        console.error('Ошибка инициализации приложения:', err);
+        console.error('Index: Ошибка инициализации приложения:', err);
         toast.error('Ошибка при загрузке приложения');
       } finally {
+        console.log('Index: Инициализация завершена, убираем загрузку');
         setIsLoading(false);
       }
     };
@@ -83,13 +86,14 @@ const Index = () => {
 
   const loadTelegramProfile = async (userId: number) => {
     try {
+      console.log('Index: Загрузка профиля для пользователя:', userId);
       const profileData = await getTelegramProfile(userId);
       if (profileData && profileData.result) {
         setTelegramProfile(profileData.result);
-        console.log('Профиль загружен и сохранен в базе:', profileData.result);
+        console.log('Index: Профиль загружен и сохранен в базе:', profileData.result);
       }
     } catch (err) {
-      console.error('Ошибка загрузки профиля:', err);
+      console.error('Index: Ошибка загрузки профиля:', err);
       toast.error('Не удалось загрузить профиль пользователя');
     }
   };
@@ -100,54 +104,90 @@ const Index = () => {
       return;
     }
 
+    console.log('Index: Проверяем подписку для пользователя:', user.id);
+    
     try {
       const subscribed = await checkSubscription(user.id);
+      console.log('Index: Результат проверки подписки:', subscribed);
       
       setIsSubscribed(subscribed);
       setSubscriptionChecked(true);
       
       if (subscribed) {
+        console.log('Index: Подписка подтверждена, переходим к картам');
         toast.success('Подписка подтверждена! Переходим к картам...');
-        // Небольшая задержка перед переходом, чтобы пользователь увидел сообщение
+        setIsNavigating(true);
+        
+        // Переход с задержкой для показа сообщения
         setTimeout(() => {
+          console.log('Index: Выполняем переход на /cards');
           navigate('/cards');
-        }, 1000);
+        }, 1500);
       } else {
+        console.log('Index: Подписка не найдена');
         toast.error('Подписка не найдена. Пожалуйста, подпишитесь на канал TonTripBonanza.');
       }
     } catch (err) {
-      console.error('Ошибка проверки подписки:', err);
+      console.error('Index: Ошибка проверки подписки:', err);
       toast.error('Ошибка при проверке подписки');
+      setSubscriptionChecked(true);
     }
   };
 
   const handleDirectAccess = () => {
-    // Прямой доступ без проверки подписки (для тестирования)
+    console.log('Index: Прямой доступ к картам');
+    setIsNavigating(true);
     navigate('/cards');
   };
 
   const handleAdminAccess = () => {
-    // Переход в админ-панель
+    console.log('Index: Переход в админ-панель');
+    setIsNavigating(true);
     navigate('/admin');
   };
 
   if (error) {
-    console.error('Ошибка:', error);
+    console.error('Index: Ошибка:', error);
   }
 
   // Показываем загрузку пока проверяем пользователя
   if (isLoading) {
+    console.log('Index: Показываем экран загрузки');
     return (
       <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-20 h-20 mx-auto mb-4 bg-gradient-ton rounded-full flex items-center justify-center animate-pulse">
             <Wallet className="w-10 h-10 text-white" />
           </div>
-          <p className="text-muted-foreground">Загрузка...</p>
+          <p className="text-muted-foreground">Загрузка приложения...</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Инициализация пользователя и настроек
+          </p>
         </div>
       </div>
     );
   }
+
+  // Показываем экран навигации при переходе
+  if (isNavigating) {
+    console.log('Index: Показываем экран навигации');
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-ton rounded-full flex items-center justify-center animate-spin">
+            <Wallet className="w-10 h-10 text-white" />
+          </div>
+          <p className="text-muted-foreground">Переходим...</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('Index: Рендерим основной интерфейс', {
+    user: user?.id,
+    subscriptionChecked,
+    isSubscribed
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white">
@@ -173,6 +213,7 @@ const Index = () => {
               <Button 
                 className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
                 onClick={handleAdminAccess}
+                disabled={loading}
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Открыть админ панель
