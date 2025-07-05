@@ -1,18 +1,30 @@
+
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { NFTCard } from "@/components/NFTCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Gift } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Gift, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { useCards } from "@/hooks/useCards";
 import { useBalance } from "@/hooks/useBalance";
 import { useReferralSystem } from "@/hooks/useReferralSystem";
+import { supabase } from "@/integrations/supabase/client";
 import { TelegramUser } from "@/types/telegram";
 
 const Cards = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
+  const [userWallet, setUserWallet] = useState<string | null>(null);
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [rentDialogOpen, setRentDialogOpen] = useState(false);
+  const [selectedCardId, setSelectedCardId] = useState<string>("");
+  const [withdrawAddress, setWithdrawAddress] = useState("");
+  const [rentPrice, setRentPrice] = useState("");
+  
   const { availableCards, userCards, loading, fetchAvailableCards, fetchUserCards, purchaseCard, rentCard, withdrawCard } = useCards();
   const { balance, fetchBalance } = useBalance();
   const { processReferralBonus, initializeReferralSystem } = useReferralSystem();
@@ -25,6 +37,15 @@ const Cards = () => {
         if (telegramUser) {
           setUser(telegramUser);
           
+          // Получаем информацию о кошельке пользователя
+          const { data: userData } = await supabase
+            .from('telegram_users')
+            .select('wallet_address')
+            .eq('telegram_id', telegramUser.id)
+            .single();
+          
+          setUserWallet(userData?.wallet_address || null);
+          
           // Инициализируем реферальную систему
           await initializeReferralSystem(telegramUser.id);
           
@@ -35,6 +56,7 @@ const Cards = () => {
         // Тестовые данные
         const testUser = { id: 123456789, first_name: "Test", last_name: "User" };
         setUser(testUser);
+        setUserWallet("EQD..._test_wallet_address"); // Тестовый кошелёк
         await fetchUserCards(testUser.id);
         await fetchBalance(testUser.id);
       }
@@ -76,19 +98,53 @@ const Cards = () => {
     }
   };
 
-  const handleWithdraw = async (id: string) => {
-    // В реальном приложении здесь будет диалог для ввода адреса кошелька
-    const success = await withdrawCard(id, 'EQD..._placeholder_address');
+  const handleWithdrawClick = (id: string) => {
+    if (!userWallet) {
+      toast.error('Подключите TON кошелёк для вывода карт');
+      return;
+    }
+    setSelectedCardId(id);
+    setWithdrawAddress(userWallet);
+    setWithdrawDialogOpen(true);
+  };
+
+  const handleWithdrawConfirm = async () => {
+    if (!withdrawAddress.trim()) {
+      toast.error('Введите адрес кошелька');
+      return;
+    }
+
+    const success = await withdrawCard(selectedCardId, withdrawAddress);
     if (success) {
-      await fetchUserCards(user.id);
+      await fetchUserCards(user?.id || 0);
+      setWithdrawDialogOpen(false);
+      setWithdrawAddress("");
+      setSelectedCardId("");
     }
   };
 
-  const handleRent = async (id: string) => {
-    // В реальном приложении здесь будет диалог для ввода цены
-    const success = await rentCard(id, 100);
+  const handleRentClick = (id: string) => {
+    if (!userWallet) {
+      toast.error('Подключите TON кошелёк для сдачи карт в аренду');
+      return;
+    }
+    setSelectedCardId(id);
+    setRentDialogOpen(true);
+  };
+
+  const handleRentConfirm = async () => {
+    const price = parseFloat(rentPrice);
+    if (isNaN(price) || price <= 0) {
+      toast.error('Введите корректную цену аренды');
+      return;
+    }
+
+    const success = await rentCard(selectedCardId, price);
     if (success) {
-      await fetchUserCards(user.id);
+      await fetchUserCards(user?.id || 0);
+      setRentDialogOpen(false);
+      setRentPrice("");
+      setSelectedCardId("");
     }
   };
 
@@ -126,6 +182,12 @@ const Cards = () => {
               <p className="text-xs text-muted-foreground">
                 Баланс: {balance?.rub_balance || 0} рублей
               </p>
+              {userWallet && (
+                <div className="flex items-center gap-1 text-xs text-green-400">
+                  <Wallet className="w-3 h-3" />
+                  <span>Кошелёк подключен</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -147,9 +209,10 @@ const Cards = () => {
                 <NFTCard
                   key={card.id}
                   {...card}
+                  hasWallet={!!userWallet}
                   onPurchase={handlePurchase}
-                  onWithdraw={handleWithdraw}
-                  onRent={handleRent}
+                  onWithdraw={handleWithdrawClick}
+                  onRent={handleRentClick}
                 />
               ))
             ) : (
@@ -169,9 +232,10 @@ const Cards = () => {
                 <NFTCard
                   key={card.id}
                   {...card}
+                  hasWallet={!!userWallet}
                   onPurchase={handlePurchase}
-                  onWithdraw={handleWithdraw}
-                  onRent={handleRent}
+                  onWithdraw={handleWithdrawClick}
+                  onRent={handleRentClick}
                 />
               ))
             ) : (
@@ -181,6 +245,79 @@ const Cards = () => {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Withdraw Dialog */}
+        <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
+          <DialogContent className="bg-ton-dark border border-blue-500/20">
+            <DialogHeader>
+              <DialogTitle className="text-white">Вывод карты в блокчейн</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="withdraw-address" className="text-white">Адрес кошелька</Label>
+                <Input
+                  id="withdraw-address"
+                  value={withdrawAddress}
+                  onChange={(e) => setWithdrawAddress(e.target.value)}
+                  placeholder="Введите адрес TON кошелька"
+                  className="bg-black/50 border-blue-500/20 text-white"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleWithdrawConfirm}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500"
+                >
+                  Подтвердить вывод
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setWithdrawDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rent Dialog */}
+        <Dialog open={rentDialogOpen} onOpenChange={setRentDialogOpen}>
+          <DialogContent className="bg-ton-dark border border-blue-500/20">
+            <DialogHeader>
+              <DialogTitle className="text-white">Сдать карту в аренду</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="rent-price" className="text-white">Цена аренды (рублей в месяц)</Label>
+                <Input
+                  id="rent-price"
+                  type="number"
+                  value={rentPrice}
+                  onChange={(e) => setRentPrice(e.target.value)}
+                  placeholder="Введите цену аренды"
+                  className="bg-black/50 border-blue-500/20 text-white"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleRentConfirm}
+                  className="flex-1 bg-gradient-ton"
+                >
+                  Выставить на аренду
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setRentDialogOpen(false)}
+                  className="flex-1"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Navigation />

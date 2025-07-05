@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -179,6 +180,21 @@ export const useCards = () => {
   const rentCard = async (userCardId: string, rentPrice: number) => {
     try {
       setLoading(true);
+      
+      // Проверяем, что карта не выведена в блокчейн
+      const { data: cardData, error: cardError } = await supabase
+        .from('user_cards')
+        .select('is_withdrawn')
+        .eq('id', userCardId)
+        .single();
+
+      if (cardError) throw cardError;
+
+      if (cardData?.is_withdrawn) {
+        toast.error('Нельзя сдать в аренду карту, которая выведена в блокчейн');
+        return false;
+      }
+
       const rentUntil = new Date();
       rentUntil.setDate(rentUntil.getDate() + 30);
 
@@ -209,11 +225,31 @@ export const useCards = () => {
   const withdrawCard = async (userCardId: string, blockchainAddress: string) => {
     try {
       setLoading(true);
+      
+      if (!blockchainAddress || blockchainAddress.trim().length < 10) {
+        toast.error('Введите корректный адрес кошелька');
+        return false;
+      }
+
+      // Проверяем, что карта не сдана в аренду
+      const { data: cardData, error: cardError } = await supabase
+        .from('user_cards')
+        .select('is_rented')
+        .eq('id', userCardId)
+        .single();
+
+      if (cardError) throw cardError;
+
+      if (cardData?.is_rented) {
+        toast.error('Нельзя вывести карту, которая сдана в аренду');
+        return false;
+      }
+
       const { error } = await supabase
         .from('user_cards')
         .update({
           is_withdrawn: true,
-          blockchain_address: blockchainAddress
+          blockchain_address: blockchainAddress.trim()
         })
         .eq('id', userCardId);
 
