@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { QrCode, Download, Share } from "lucide-react";
+import { QrCode } from "lucide-react";
 import { toast } from "sonner";
 import QRCode from 'qrcode';
 
@@ -35,37 +35,6 @@ export const QRGenerator = ({ data, title = "QR-код", description }: QRGenera
     }
   };
 
-  const downloadQR = () => {
-    if (!qrDataUrl) return;
-    
-    const link = document.createElement('a');
-    link.href = qrDataUrl;
-    link.download = 'referral-qr-code.png';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("QR-код скачан!");
-  };
-
-  const shareQR = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: title,
-          text: `Присоединяйтесь к TonTrip Bonanza!`,
-          url: data,
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-        navigator.clipboard.writeText(data);
-        toast.success("Ссылка скопирована!");
-      }
-    } else {
-      navigator.clipboard.writeText(data);
-      toast.success("Ссылка скопирована!");
-    }
-  };
-
   return (
     <Card className="glass-card p-4">
       <div className="text-center">
@@ -80,32 +49,14 @@ export const QRGenerator = ({ data, title = "QR-код", description }: QRGenera
             Создать QR-код
           </Button>
         ) : (
-          <div className="mb-4">
-            <div className="w-48 h-48 mx-auto mb-4 bg-white rounded-lg flex items-center justify-center p-2">
-              <img 
-                src={qrDataUrl} 
-                alt="QR Code" 
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="flex gap-2 justify-center">
-              <Button size="sm" variant="outline" onClick={downloadQR}>
-                <Download className="w-4 h-4 mr-2" />
-                Скачать
-              </Button>
-              <Button size="sm" variant="outline" onClick={shareQR}>
-                <Share className="w-4 h-4 mr-2" />
-                Поделиться
-              </Button>
-            </div>
+          <div className="w-48 h-48 mx-auto bg-white rounded-lg flex items-center justify-center p-2">
+            <img 
+              src={qrDataUrl} 
+              alt="QR Code" 
+              className="w-full h-full object-contain"
+            />
           </div>
         )}
-        
-        <div className="bg-black/20 rounded-lg p-3">
-          <p className="text-xs font-mono break-all text-muted-foreground">
-            {data}
-          </p>
-        </div>
       </div>
     </Card>
   );
