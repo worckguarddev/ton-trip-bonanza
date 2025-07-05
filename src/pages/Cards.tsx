@@ -36,11 +36,12 @@ export default function Cards() {
   const isWalletConnected = tonConnectUI.connected;
 
   useEffect(() => {
+    console.log('Cards: Загружаем данные для пользователя:', telegramId);
     fetchAvailableCards();
     fetchBalance(telegramId);
     fetchUserCards(telegramId);
     initializeReferralSystem(telegramId);
-  }, []);
+  }, [telegramId]);
 
   const handlePurchase = async (cardId: string) => {
     const card = availableCards.find(c => c.id === cardId);
@@ -49,6 +50,7 @@ export default function Cards() {
       return;
     }
 
+    console.log('Покупаем карту:', cardId, 'для пользователя:', telegramId);
     const success = await purchaseCard(cardId, telegramId, card.price);
     if (success) {
       await processReferralBonus(telegramId, card.price);
@@ -117,7 +119,16 @@ export default function Cards() {
   };
 
   if (loading) {
-    return <div className="p-4">Загрузка...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-ton rounded-full flex items-center justify-center animate-pulse">
+            <div className="w-10 h-10 rounded-full bg-white/20"></div>
+          </div>
+          <p className="text-muted-foreground">Загрузка карт...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -126,6 +137,9 @@ export default function Cards() {
         <h1 className="text-2xl font-bold gradient-text mb-2">Бонусные карты</h1>
         <p className="text-muted-foreground">
           Покупайте карты и получайте бонусы за путешествия
+        </p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Пользователь ID: {telegramId}
         </p>
       </div>
 
@@ -136,22 +150,28 @@ export default function Cards() {
         </TabsList>
         
         <TabsContent value="available" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {availableCards.map((card) => (
-              <NFTCard
-                key={card.id}
-                id={card.id}
-                title={card.title}
-                description={card.description || ''}
-                image={card.image_url || '/placeholder.svg'}
-                price={card.price}
-                rarity={card.rarity}
-                owned={false}
-                hasWallet={isWalletConnected}
-                onPurchase={handlePurchase}
-              />
-            ))}
-          </div>
+          {availableCards.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Карты не найдены</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {availableCards.map((card) => (
+                <NFTCard
+                  key={card.id}
+                  id={card.id}
+                  title={card.title}
+                  description={card.description || ''}
+                  image={card.image_url || '/placeholder.svg'}
+                  price={card.price}
+                  rarity={card.rarity}
+                  owned={false}
+                  hasWallet={isWalletConnected}
+                  onPurchase={handlePurchase}
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
         
         <TabsContent value="owned" className="space-y-4">
@@ -210,7 +230,6 @@ export default function Cards() {
         </DialogContent>
       </Dialog>
 
-      {/* Диалог вывода */}
       <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
         <DialogContent>
           <DialogHeader>

@@ -43,8 +43,8 @@ const Index = () => {
             // Инициализируем реферальную систему
             await initializeReferralSystem(telegramUser.id);
             
-            // Проверяем существующего пользователя
-            await checkExistingUser(telegramUser.id);
+            // Загружаем профиль пользователя
+            await loadTelegramProfile(telegramUser.id);
           } else {
             // Если пользователь не найден в Telegram WebApp, используем тестовые данные
             const testUser = {
@@ -54,7 +54,8 @@ const Index = () => {
               username: "testuser"
             };
             setUser(testUser);
-            await checkExistingUser(testUser.id);
+            await initializeReferralSystem(testUser.id);
+            await loadTelegramProfile(testUser.id);
           }
         } else {
           // Для тестирования без Telegram WebApp
@@ -66,7 +67,8 @@ const Index = () => {
             username: "testuser"
           };
           setUser(testUser);
-          await checkExistingUser(testUser.id);
+          await initializeReferralSystem(testUser.id);
+          await loadTelegramProfile(testUser.id);
         }
       } catch (err) {
         console.error('Ошибка инициализации приложения:', err);
@@ -78,31 +80,6 @@ const Index = () => {
 
     initializeApp();
   }, []);
-
-  const checkExistingUser = async (userId: number) => {
-    try {
-      // Проверяем существует ли пользователь в базе
-      const { data: existingUser } = await supabase
-        .from('telegram_users')
-        .select('is_subscribed, subscription_checked_at')
-        .eq('telegram_id', userId)
-        .single();
-
-      if (existingUser && existingUser.is_subscribed && existingUser.subscription_checked_at) {
-        // Пользователь существует и подписка подтверждена - перенаправляем в основное меню
-        console.log('Пользователь с подтвержденной подпиской найден, перенаправляем в меню');
-        navigate('/cards');
-        return;
-      }
-
-      // Если пользователь не найден или подписка не подтверждена, загружаем профиль
-      await loadTelegramProfile(userId);
-    } catch (err) {
-      console.error('Ошибка проверки пользователя:', err);
-      // В случае ошибки загружаем профиль как обычно
-      await loadTelegramProfile(userId);
-    }
-  };
 
   const loadTelegramProfile = async (userId: number) => {
     try {
@@ -130,9 +107,11 @@ const Index = () => {
       setSubscriptionChecked(true);
       
       if (subscribed) {
-        toast.success('Подписка подтверждена!');
-        // Перенаправляем на страницу с бонусными картами
-        navigate('/cards');
+        toast.success('Подписка подтверждена! Переходим к картам...');
+        // Небольшая задержка перед переходом, чтобы пользователь увидел сообщение
+        setTimeout(() => {
+          navigate('/cards');
+        }, 1000);
       } else {
         toast.error('Подписка не найдена. Пожалуйста, подпишитесь на канал TonTripBonanza.');
       }
