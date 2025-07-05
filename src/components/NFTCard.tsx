@@ -2,7 +2,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Wallet, AlertCircle } from "lucide-react";
+import { Wallet } from "lucide-react";
 
 interface NFTCardProps {
   id: string;
@@ -74,24 +74,16 @@ export const NFTCard = ({
             <Button 
               className="w-full bg-gradient-to-r from-green-500 to-emerald-500"
               onClick={() => onWithdraw?.(id)}
-              disabled={!hasWallet}
             >
               <Wallet className="w-4 h-4 mr-2" />
-              {hasWallet ? 'Вывести в блокчейн' : 'Подключите кошелёк'}
+              Вывести в блокчейн
             </Button>
-            {!hasWallet && (
-              <div className="flex items-center gap-2 text-xs text-yellow-500">
-                <AlertCircle className="w-4 h-4" />
-                <span>Для вывода необходимо подключить TON кошелёк</span>
-              </div>
-            )}
             <Button 
               variant="outline" 
               className="w-full"
               onClick={() => onRent?.(id)}
-              disabled={!hasWallet}
             >
-              {hasWallet ? 'Сдать в аренду' : 'Подключите кошелёк для аренды'}
+              Сдать в аренду
             </Button>
           </div>
         ) : (
