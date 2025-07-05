@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useCards } from '@/hooks/useCards';
 import { useBalance } from '@/hooks/useBalance';
@@ -24,6 +23,7 @@ export default function Cards() {
   const [rentPrice, setRentPrice] = useState('');
   const [withdrawAddress, setWithdrawAddress] = useState('');
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [initializationStarted, setInitializationStarted] = useState(false);
 
   // Получаем telegram ID из window.Telegram или используем тестовый ID
   const getTelegramId = () => {
@@ -37,29 +37,69 @@ export default function Cards() {
   const isWalletConnected = tonConnectUI.connected;
 
   useEffect(() => {
+    if (initializationStarted) {
+      console.log('Cards: Инициализация уже запущена, пропускаем');
+      return;
+    }
+
     const loadData = async () => {
-      console.log('Cards: Загружаем данные для пользователя:', telegramId);
+      console.log('Cards: Начинаем загрузку данных для пользователя:', telegramId);
+      setInitializationStarted(true);
       
       try {
-        // Загружаем все данные параллельно
-        await Promise.all([
+        console.log('Cards: Запускаем параллельную загрузку данных...');
+        
+        const [cardsResult, balanceResult, userCardsResult, referralResult] = await Promise.allSettled([
           fetchAvailableCards(),
           fetchBalance(telegramId),
           fetchUserCards(telegramId),
           initializeReferralSystem(telegramId)
         ]);
+
+        console.log('Cards: Результаты загрузки:', {
+          cards: cardsResult.status,
+          balance: balanceResult.status,
+          userCards: userCardsResult.status,
+          referral: referralResult.status
+        });
+
+        // Проверяем результаты
+        if (cardsResult.status === 'rejected') {
+          console.error('Cards: Ошибка загрузки доступных карт:', cardsResult.reason);
+        }
+        if (balanceResult.status === 'rejected') {
+          console.error('Cards: Ошибка загрузки баланса:', balanceResult.reason);
+        }
+        if (userCardsResult.status === 'rejected') {
+          console.error('Cards: Ошибка загрузки карт пользователя:', userCardsResult.reason);
+        }
+        if (referralResult.status === 'rejected') {
+          console.error('Cards: Ошибка инициализации реферальной системы:', referralResult.reason);
+        }
         
-        console.log('Все данные загружены успешно');
+        console.log('Cards: Все данные обработаны, устанавливаем dataLoaded = true');
         setDataLoaded(true);
       } catch (error) {
-        console.error('Ошибка загрузки данных:', error);
+        console.error('Cards: Критическая ошибка загрузки данных:', error);
         toast.error('Ошибка загрузки данных');
         setDataLoaded(true); // Показываем интерфейс даже при ошибке
       }
     };
 
+    console.log('Cards: Компонент монтирован, запускаем загрузку данных');
     loadData();
-  }, [telegramId]);
+  }, [telegramId, initializationStarted]);
+
+  // Логируем состояние компонента
+  useEffect(() => {
+    console.log('Cards: Состояние компонента изменилось:', {
+      loading,
+      dataLoaded,
+      availableCardsCount: availableCards.length,
+      userCardsCount: userCards.length,
+      telegramId
+    });
+  }, [loading, dataLoaded, availableCards.length, userCards.length, telegramId]);
 
   const handlePurchase = async (cardId: string) => {
     const card = availableCards.find(c => c.id === cardId);
@@ -136,19 +176,27 @@ export default function Cards() {
     }
   };
 
-  // Показываем загрузку только если данные еще не были загружены
-  if (loading && !dataLoaded) {
+  // Показываем подробную информацию о загрузке
+  if (!dataLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white flex items-center justify-center">
         <div className="text-center">
           <div className="w-20 h-20 mx-auto mb-4 bg-gradient-ton rounded-full flex items-center justify-center animate-pulse">
             <div className="w-10 h-10 rounded-full bg-white/20"></div>
           </div>
-          <p className="text-muted-foreground">Загрузка карт...</p>
+          <p className="text-muted-foreground mb-2">Загрузка карт...</p>
+          <p className="text-sm text-muted-foreground">
+            Пользователь: {telegramId}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">
+            Загружено карт: {availableCards.length} | Ваши карты: {userCards.length}
+          </p>
         </div>
       </div>
     );
   }
+
+  console.log('Cards: Рендерим основной интерфейс');
 
   return (
     <div className="p-4 space-y-6">
@@ -159,6 +207,9 @@ export default function Cards() {
         </p>
         <p className="text-sm text-muted-foreground mt-2">
           Пользователь ID: {telegramId}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Данные загружены: {dataLoaded ? 'Да' : 'Нет'} | Доступно карт: {availableCards.length}
         </p>
       </div>
 
@@ -173,6 +224,9 @@ export default function Cards() {
             <div className="text-center py-8">
               <p className="text-muted-foreground">
                 {dataLoaded ? 'Карты не найдены' : 'Загрузка карт...'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Состояние загрузки: {loading ? 'Загружается' : 'Завершено'}
               </p>
             </div>
           ) : (
