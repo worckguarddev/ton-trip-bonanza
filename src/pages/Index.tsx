@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -74,7 +73,7 @@ const Index = () => {
       const profileData = await getTelegramProfile(userId);
       if (profileData && profileData.result) {
         setTelegramProfile(profileData.result);
-        console.log('Профиль загружен:', profileData.result);
+        console.log('Профиль загружен и сохранен в базе:', profileData.result);
       }
     } catch (err) {
       console.error('Ошибка загрузки профиля:', err);
@@ -89,9 +88,7 @@ const Index = () => {
     }
 
     try {
-      // Используем ID канала - замените на ваш реальный канал
-      const channelId = '@your_channel'; // Например: '@ton_trip_bonanza'
-      const subscribed = await checkSubscription(user.id, channelId);
+      const subscribed = await checkSubscription(user.id);
       
       setIsSubscribed(subscribed);
       setSubscriptionChecked(true);
@@ -101,7 +98,7 @@ const Index = () => {
         // Перенаправляем на страницу с бонусными картами
         navigate('/cards');
       } else {
-        toast.error('Подписка не найдена. Пожалуйста, подпишитесь на канал.');
+        toast.error('Подписка не найдена. Пожалуйста, подпишитесь на канал TonTripBonanza.');
       }
     } catch (err) {
       console.error('Ошибка проверки подписки:', err);
@@ -164,7 +161,7 @@ const Index = () => {
             )}
             
             {loading && (
-              <p className="text-sm text-blue-400">Загрузка данных профиля...</p>
+              <p className="text-sm text-blue-400">Загрузка и сохранение данных профиля...</p>
             )}
             
             {error && (
@@ -188,19 +185,19 @@ const Index = () => {
             </div>
             
             <p className="text-sm text-muted-foreground mb-4">
-              Для доступа ко всем функциям подпишитесь на наш канал
+              Для доступа ко всем функциям подпишитесь на канал TonTripBonanza
             </p>
             
             {subscriptionChecked && !isSubscribed && (
               <p className="text-sm text-red-400 mb-4">
-                Подписка не найдена. Подпишитесь и попробуйте снова.
+                Подписка на TonTripBonanza не найдена. Подпишитесь и попробуйте снова.
               </p>
             )}
             
             <div className="flex gap-2">
               <Button 
                 className="flex-1 bg-telegram-blue hover:bg-telegram-blue/80"
-                onClick={() => window.open('https://t.me/your_channel', '_blank')}
+                onClick={() => window.open('https://t.me/TonTripBonanza', '_blank')}
               >
                 Подписаться
               </Button>

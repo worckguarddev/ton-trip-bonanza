@@ -9,7 +9,51 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      telegram_users: {
+        Row: {
+          bio: string | null
+          created_at: string
+          first_name: string
+          id: string
+          is_subscribed: boolean | null
+          language_code: string | null
+          last_name: string | null
+          photo_url: string | null
+          subscription_checked_at: string | null
+          telegram_id: number
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          first_name: string
+          id?: string
+          is_subscribed?: boolean | null
+          language_code?: string | null
+          last_name?: string | null
+          photo_url?: string | null
+          subscription_checked_at?: string | null
+          telegram_id: number
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          first_name?: string
+          id?: string
+          is_subscribed?: boolean | null
+          language_code?: string | null
+          last_name?: string | null
+          photo_url?: string | null
+          subscription_checked_at?: string | null
+          telegram_id?: number
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

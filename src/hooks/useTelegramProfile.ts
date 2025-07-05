@@ -52,7 +52,7 @@ export const useTelegramProfile = () => {
         throw new Error(data?.description || 'Не удалось получить данные профиля');
       }
 
-      console.log('Данные профиля получены:', data);
+      console.log('Данные профиля получены и сохранены в базе:', data);
       return data;
 
     } catch (err) {
@@ -65,17 +65,16 @@ export const useTelegramProfile = () => {
     }
   };
 
-  const checkSubscription = async (userId: number, channelId: string) => {
+  const checkSubscription = async (userId: number) => {
     setLoading(true);
     setError(null);
 
     try {
-      console.log(`Проверка подписки пользователя ${userId} на канал ${channelId}`);
+      console.log(`Проверка подписки пользователя ${userId} на канал TonTripBonanza`);
 
       const { data, error: functionError } = await supabase.functions.invoke('telegram-profile', {
         body: {
           userId,
-          channelId,
           action: 'checkSubscription'
         }
       });
