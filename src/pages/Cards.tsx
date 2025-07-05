@@ -3,11 +3,10 @@ import { useState, useEffect } from 'react';
 import { useCards } from '@/hooks/useCards';
 import { useBalance } from '@/hooks/useBalance';
 import { useReferralSystem } from '@/hooks/useReferralSystem';
-import { useTelegramProfile } from '@/hooks/useTelegramProfile';
 import { NFTCard } from '@/components/NFTCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
@@ -17,7 +16,6 @@ export default function Cards() {
   const { availableCards, userCards, loading, fetchAvailableCards, fetchUserCards, purchaseCard, rentCard, withdrawCard } = useCards();
   const { balance, fetchBalance } = useBalance();
   const { initializeReferralSystem, processReferralBonus } = useReferralSystem();
-  const { profile } = useTelegramProfile();
   const [tonConnectUI] = useTonConnectUI();
   
   const [rentDialogOpen, setRentDialogOpen] = useState(false);
@@ -26,17 +24,23 @@ export default function Cards() {
   const [rentPrice, setRentPrice] = useState('');
   const [withdrawAddress, setWithdrawAddress] = useState('');
 
-  const telegramId = profile?.id || 123456789;
+  // Получаем telegram ID из window.Telegram или используем тестовый ID
+  const getTelegramId = () => {
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
+      return window.Telegram.WebApp.initDataUnsafe.user.id;
+    }
+    return 123456789; // Тестовый ID
+  };
+
+  const telegramId = getTelegramId();
   const isWalletConnected = tonConnectUI.connected;
 
   useEffect(() => {
     fetchAvailableCards();
-    if (profile?.id) {
-      fetchBalance(profile.id);
-      fetchUserCards(profile.id);
-      initializeReferralSystem(profile.id);
-    }
-  }, [profile]);
+    fetchBalance(telegramId);
+    fetchUserCards(telegramId);
+    initializeReferralSystem(telegramId);
+  }, []);
 
   const handlePurchase = async (cardId: string) => {
     const card = availableCards.find(c => c.id === cardId);
