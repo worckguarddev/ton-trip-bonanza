@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet } from "lucide-react";
+import { Wallet, User, CheckCircle, AlertCircle } from "lucide-react";
+import { useTelegramProfile } from "@/hooks/useTelegramProfile";
+import { toast } from "sonner";
 
 declare global {
   interface Window {
@@ -20,7 +22,9 @@ declare global {
           user?: {
             id: number;
             first_name: string;
+            last_name?: string;
             username?: string;
+            language_code?: string;
           };
         };
       };
@@ -30,8 +34,12 @@ declare global {
 
 const Index = () => {
   const [user, setUser] = useState<any>(null);
+  const [telegramProfile, setTelegramProfile] = useState<any>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
   const navigate = useNavigate();
+  
+  const { getTelegramProfile, checkSubscription, loading, error } = useTelegramProfile();
 
   useEffect(() => {
     // Инициализация Telegram WebApp
@@ -42,15 +50,73 @@ const Index = () => {
       const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
       if (telegramUser) {
         setUser(telegramUser);
+        console.log('Telegram пользователь:', telegramUser);
+        
+        // Получаем расширенную информацию о пользователе
+        loadTelegramProfile(telegramUser.id);
       }
+    } else {
+      // Для тестирования без Telegram WebApp
+      console.log('Telegram WebApp не обнаружен, используем тестовые данные');
+      const testUser = {
+        id: 123456789,
+        first_name: "Тестовый",
+        last_name: "Пользователь",
+        username: "testuser"
+      };
+      setUser(testUser);
+      loadTelegramProfile(testUser.id);
     }
   }, []);
 
-  const handleSubscriptionCheck = () => {
-    setIsSubscribed(true);
-    // Перенаправляем на страницу с бонусными картами
+  const loadTelegramProfile = async (userId: number) => {
+    try {
+      const profileData = await getTelegramProfile(userId);
+      if (profileData && profileData.result) {
+        setTelegramProfile(profileData.result);
+        console.log('Профиль загружен:', profileData.result);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки профиля:', err);
+      toast.error('Не удалось загрузить профиль пользователя');
+    }
+  };
+
+  const handleSubscriptionCheck = async () => {
+    if (!user?.id) {
+      toast.error('Пользователь не найден');
+      return;
+    }
+
+    try {
+      // Используем ID канала - замените на ваш реальный канал
+      const channelId = '@your_channel'; // Например: '@ton_trip_bonanza'
+      const subscribed = await checkSubscription(user.id, channelId);
+      
+      setIsSubscribed(subscribed);
+      setSubscriptionChecked(true);
+      
+      if (subscribed) {
+        toast.success('Подписка подтверждена!');
+        // Перенаправляем на страницу с бонусными картами
+        navigate('/cards');
+      } else {
+        toast.error('Подписка не найдена. Пожалуйста, подпишитесь на канал.');
+      }
+    } catch (err) {
+      console.error('Ошибка проверки подписки:', err);
+      toast.error('Ошибка при проверке подписки');
+    }
+  };
+
+  const handleDirectAccess = () => {
+    // Прямой доступ без проверки подписки (для тестирования)
     navigate('/cards');
   };
+
+  if (error) {
+    console.error('Ошибка:', error);
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white">
@@ -68,25 +134,94 @@ const Index = () => {
           </p>
         </div>
 
+        {/* User Profile Info */}
+        {(user || telegramProfile) && (
+          <Card className="glass-card mb-6 p-4 animate-fade-in">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold">
+                  {telegramProfile?.first_name || user?.first_name}
+                  {(telegramProfile?.last_name || user?.last_name) && ` ${telegramProfile?.last_name || user?.last_name}`}
+                </h3>
+                {(telegramProfile?.username || user?.username) && (
+                  <p className="text-sm text-muted-foreground">
+                    @{telegramProfile?.username || user?.username}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  ID: {user?.id}
+                </p>
+              </div>
+            </div>
+            
+            {telegramProfile?.bio && (
+              <p className="text-sm text-muted-foreground mb-2">
+                {telegramProfile.bio}
+              </p>
+            )}
+            
+            {loading && (
+              <p className="text-sm text-blue-400">Загрузка данных профиля...</p>
+            )}
+            
+            {error && (
+              <p className="text-sm text-red-400">Ошибка: {error}</p>
+            )}
+          </Card>
+        )}
+
         {/* Subscription Check */}
         <Card className="glass-card mb-6 p-4 animate-fade-in">
           <div className="text-center">
-            <h2 className="text-lg font-semibold mb-2">Подпишитесь на канал</h2>
+            <div className="flex items-center justify-center mb-3">
+              {subscriptionChecked ? (
+                isSubscribed ? (
+                  <CheckCircle className="w-6 h-6 text-green-400 mr-2" />
+                ) : (
+                  <AlertCircle className="w-6 h-6 text-red-400 mr-2" />
+                )
+              ) : null}
+              <h2 className="text-lg font-semibold">Подпишитесь на канал</h2>
+            </div>
+            
             <p className="text-sm text-muted-foreground mb-4">
               Для доступа ко всем функциям подпишитесь на наш канал
             </p>
+            
+            {subscriptionChecked && !isSubscribed && (
+              <p className="text-sm text-red-400 mb-4">
+                Подписка не найдена. Подпишитесь и попробуйте снова.
+              </p>
+            )}
+            
             <div className="flex gap-2">
-              <Button className="flex-1 bg-telegram-blue hover:bg-telegram-blue/80">
+              <Button 
+                className="flex-1 bg-telegram-blue hover:bg-telegram-blue/80"
+                onClick={() => window.open('https://t.me/your_channel', '_blank')}
+              >
                 Подписаться
               </Button>
               <Button 
                 variant="outline" 
                 className="flex-1"
                 onClick={handleSubscriptionCheck}
+                disabled={loading}
               >
-                Проверить
+                {loading ? 'Проверяем...' : 'Проверить'}
               </Button>
             </div>
+            
+            {/* Кнопка для прямого доступа (для тестирования) */}
+            <Button 
+              variant="ghost" 
+              className="w-full mt-2 text-xs"
+              onClick={handleDirectAccess}
+            >
+              Войти без проверки (тест)
+            </Button>
           </div>
         </Card>
       </div>
