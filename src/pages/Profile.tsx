@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { TONConnectButton } from "@/components/TONConnectButton";
 import { BalanceCard } from "@/components/BalanceCard";
+import { TopUpDialog } from "@/components/TopUpDialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -15,8 +16,9 @@ import { TelegramUser } from "@/types/telegram";
 
 const Profile = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
+  const [topUpDialogOpen, setTopUpDialogOpen] = useState(false);
   const { getTelegramProfile } = useTelegramProfile();
-  const { balance, fetchBalance } = useBalance();
+  const { balance, fetchBalance, updateBalance } = useBalance();
   const { userCards, fetchUserCards } = useCards();
   const { referrals, fetchReferrals } = useReferrals();
 
@@ -51,6 +53,18 @@ const Profile = () => {
 
     initializeProfile();
   }, []);
+
+  const handleTopUp = async (amount: number) => {
+    if (!user) return;
+
+    // Обновляем баланс в базе данных
+    await updateBalance(user.id, {
+      rub_balance: (balance?.rub_balance || 0) + amount
+    });
+    
+    // Обновляем данные
+    await fetchBalance(user.id);
+  };
 
   const userStats = {
     totalCards: userCards.length,
@@ -158,6 +172,7 @@ const Profile = () => {
               currency="₽"
               icon={DollarSign}
               gradient="from-green-500 to-emerald-500"
+              onTopUp={() => setTopUpDialogOpen(true)}
             />
           </div>
         </div>
@@ -228,6 +243,12 @@ const Profile = () => {
       </div>
 
       <Navigation />
+      
+      <TopUpDialog 
+        open={topUpDialogOpen}
+        onOpenChange={setTopUpDialogOpen}
+        onTopUp={handleTopUp}
+      />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 
 import { TonConnectButton, TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, Unlink } from "lucide-react";
@@ -14,32 +14,40 @@ interface TONConnectWrapperProps {
 const TONConnectWrapper = ({ userId }: TONConnectWrapperProps) => {
   const [tonConnectUI] = useTonConnectUI();
   const wallet = useTonWallet();
+  const previousWalletRef = useRef<string | null>(null);
 
   useEffect(() => {
     const saveWalletToDatabase = async () => {
-      if (wallet) {
-        try {
-          console.log('Сохранение кошелька в базу:', wallet.account.address);
-          
-          // Сохраняем адрес кошелька в базу данных
-          const { error } = await supabase
-            .from('telegram_users')
-            .update({
-              wallet_address: wallet.account.address,
-              wallet_chain: wallet.account.chain,
-              updated_at: new Date().toISOString()
-            })
-            .eq('telegram_id', userId);
+      const currentWalletAddress = wallet?.account.address || null;
+      
+      // Проверяем, изменился ли адрес кошелька
+      if (currentWalletAddress !== previousWalletRef.current) {
+        previousWalletRef.current = currentWalletAddress;
+        
+        if (wallet && currentWalletAddress) {
+          try {
+            console.log('Сохранение кошелька в базу:', currentWalletAddress);
+            
+            // Сохраняем адрес кошелька в базу данных
+            const { error } = await supabase
+              .from('telegram_users')
+              .update({
+                wallet_address: currentWalletAddress,
+                wallet_chain: wallet.account.chain,
+                updated_at: new Date().toISOString()
+              })
+              .eq('telegram_id', userId);
 
-          if (error) {
-            console.error('Ошибка сохранения кошелька:', error);
-          } else {
-            console.log('Кошелек успешно сохранен в базу');
-            toast.success("TON кошелёк подключен и сохранен!");
+            if (error) {
+              console.error('Ошибка сохранения кошелька:', error);
+            } else {
+              console.log('Кошелек успешно сохранен в базу');
+              toast.success("TON кошелёк подключен и сохранен!");
+            }
+          } catch (error) {
+            console.error('Ошибка при сохранении кошелька:', error);
+            toast.error("Ошибка сохранения кошелька");
           }
-        } catch (error) {
-          console.error('Ошибка при сохранении кошелька:', error);
-          toast.error("Ошибка сохранения кошелька");
         }
       }
     };
@@ -50,6 +58,7 @@ const TONConnectWrapper = ({ userId }: TONConnectWrapperProps) => {
   const handleDisconnect = async () => {
     try {
       await tonConnectUI.disconnect();
+      previousWalletRef.current = null;
       
       // Удаляем адрес кошелька из базы данных
       const { error } = await supabase
