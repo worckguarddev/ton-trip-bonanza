@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -158,7 +159,7 @@ export const useReferralSystem = () => {
   };
 
   // Генерация реферальной ссылки
-  const generateReferralLink = (telegramId: number, botUsername: string = 'TonTripBonanza_bot') => {
+  const generateReferralLink = (telegramId: number, botUsername: string = 'TonTripBonanzaBot') => {
     return `https://t.me/${botUsername}?startapp=ref_${telegramId}`;
   };
 

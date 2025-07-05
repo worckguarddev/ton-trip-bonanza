@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useReferrals } from "@/hooks/useReferrals";
 import { useBalance } from "@/hooks/useBalance";
 import { useReferralSystem } from "@/hooks/useReferralSystem";
+import { QRGenerator } from "@/components/QRGenerator";
 import { TelegramUser } from "@/types/telegram";
 
 const Referrals = () => {
@@ -50,11 +51,6 @@ const Referrals = () => {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Ссылка скопирована!");
-  };
-
-  const generateQR = () => {
-    setShowQR(true);
-    toast.success("QR-код создан!");
   };
 
   const shareReferralLink = async () => {
@@ -149,7 +145,7 @@ const Referrals = () => {
             </Button>
             <Button 
               variant="outline" 
-              onClick={generateQR}
+              onClick={() => setShowQR(!showQR)}
             >
               <QrCode className="w-4 h-4" />
             </Button>
@@ -158,15 +154,13 @@ const Referrals = () => {
 
         {/* QR Code Display */}
         {showQR && (
-          <Card className="glass-card p-4 mb-6 text-center animate-fade-in">
-            <h3 className="font-semibold mb-4">QR-код реферальной ссылки</h3>
-            <div className="w-48 h-48 mx-auto bg-white rounded-lg flex items-center justify-center mb-4">
-              <QrCode className="w-24 h-24 text-black" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Покажите этот QR-код друзьям для быстрого перехода
-            </p>
-          </Card>
+          <div className="mb-6">
+            <QRGenerator 
+              data={referralLink}
+              title="QR-код реферальной ссылки"
+              description="Покажите этот QR-код друзьям для быстрого перехода"
+            />
+          </div>
         )}
 
         {/* Reward Rules */}

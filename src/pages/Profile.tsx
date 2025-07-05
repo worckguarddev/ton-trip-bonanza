@@ -11,7 +11,6 @@ import { useTelegramProfile } from "@/hooks/useTelegramProfile";
 import { useBalance } from "@/hooks/useBalance";
 import { useCards } from "@/hooks/useCards";
 import { useReferrals } from "@/hooks/useReferrals";
-import { useReferralSystem } from "@/hooks/useReferralSystem";
 import { TelegramUser } from "@/types/telegram";
 
 const Profile = () => {
@@ -21,7 +20,6 @@ const Profile = () => {
   const { balance, fetchBalance } = useBalance();
   const { userCards, fetchUserCards } = useCards();
   const { referrals, fetchReferrals } = useReferrals();
-  const { generateReferralLink } = useReferralSystem();
 
   useEffect(() => {
     const initializeProfile = async () => {
@@ -187,19 +185,6 @@ const Profile = () => {
               <div className="text-xs text-muted-foreground">Рефералов</div>
             </div>
           </div>
-        </Card>
-
-        {/* Referral Link */}
-        <Card className="glass-card p-4 mb-6">
-          <h3 className="font-semibold mb-3">Реферальная ссылка</h3>
-          <div className="bg-black/20 rounded-lg p-3 mb-3">
-            <p className="text-xs font-mono break-all text-muted-foreground">
-              {generateReferralLink(user.id)}
-            </p>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Получайте 3% с каждой покупки рефералом
-          </p>
         </Card>
 
         {/* TON Wallet */}
