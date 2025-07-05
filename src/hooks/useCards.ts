@@ -109,6 +109,26 @@ export const useCards = () => {
       
       console.log('Начало покупки карты:', { cardId, telegramId, cardPrice });
       
+      // Сначала проверяем текущий баланс
+      const { data: balanceData, error: balanceError } = await supabase
+        .from('user_balances')
+        .select('rub_balance, total_spent')
+        .eq('user_telegram_id', telegramId)
+        .single();
+
+      if (balanceError) {
+        console.error('Ошибка получения баланса:', balanceError);
+        throw new Error('Не удалось получить баланс пользователя');
+      }
+
+      const currentBalance = balanceData?.rub_balance || 0;
+      console.log('Текущий баланс:', currentBalance, 'Цена карты:', cardPrice);
+
+      if (currentBalance < cardPrice) {
+        toast.error('Недостаточно средств на балансе');
+        return false;
+      }
+
       // Покупаем карту
       const { error: purchaseError } = await supabase
         .from('user_cards')
@@ -123,9 +143,28 @@ export const useCards = () => {
       }
 
       console.log('Карта успешно добавлена в user_cards');
+
+      // Обновляем баланс пользователя
+      const newBalance = currentBalance - cardPrice;
+      const newTotalSpent = (balanceData?.total_spent || 0) + cardPrice;
+
+      const { error: updateError } = await supabase
+        .from('user_balances')
+        .update({
+          rub_balance: newBalance,
+          total_spent: newTotalSpent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_telegram_id', telegramId);
+
+      if (updateError) {
+        console.error('Ошибка обновления баланса:', updateError);
+        throw updateError;
+      }
+
+      console.log('Баланс успешно обновлен:', { newBalance, newTotalSpent });
       
       toast.success('Карта успешно приобретена за ' + cardPrice + ' рублей!');
-      await fetchUserCards(telegramId);
       return true;
     } catch (err) {
       console.error('Error purchasing card:', err);

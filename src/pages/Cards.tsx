@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { NFTCard } from "@/components/NFTCard";
@@ -15,7 +14,7 @@ import { TelegramUser } from "@/types/telegram";
 const Cards = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const { availableCards, userCards, loading, fetchAvailableCards, fetchUserCards, purchaseCard, rentCard, withdrawCard } = useCards();
-  const { balance, fetchBalance, updateBalance } = useBalance();
+  const { balance, fetchBalance } = useBalance();
   const { processReferralBonus, initializeReferralSystem } = useReferralSystem();
 
   useEffect(() => {
@@ -59,27 +58,12 @@ const Cards = () => {
       return;
     }
 
-    // Проверяем баланс
-    if (!balance || (balance.rub_balance || 0) < card.price) {
-      toast.error('Недостаточно рублей для покупки');
-      return;
-    }
-
-    console.log('Покупка карты:', { cardId: id, userId: user.id, cardPrice: card.price, currentBalance: balance.rub_balance });
+    console.log('Покупка карты:', { cardId: id, userId: user.id, cardPrice: card.price, currentBalance: balance?.rub_balance });
 
     const success = await purchaseCard(id, user.id, card.price);
     if (success) {
-      console.log('Покупка успешна, обновляем баланс');
+      console.log('Покупка успешна, обрабатываем реферальный бонус');
       
-      // Обновляем баланс после покупки
-      const newBalance = (balance.rub_balance || 0) - card.price;
-      const newTotalSpent = (balance.total_spent || 0) + card.price;
-      
-      await updateBalance(user.id, {
-        rub_balance: newBalance,
-        total_spent: newTotalSpent
-      });
-
       // Обрабатываем реферальный бонус
       await processReferralBonus(user.id, card.price);
 
