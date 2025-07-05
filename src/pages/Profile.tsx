@@ -14,7 +14,6 @@ import { useReferrals } from "@/hooks/useReferrals";
 import { TelegramUser } from "@/types/telegram";
 
 const Profile = () => {
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [user, setUser] = useState<TelegramUser | null>(null);
   const { getTelegramProfile } = useTelegramProfile();
   const { balance, fetchBalance } = useBalance();
@@ -191,12 +190,7 @@ const Profile = () => {
 
         {/* TON Wallet */}
         <div className="mb-6">
-          <TONConnectButton
-            isConnected={isWalletConnected}
-            address={isWalletConnected ? "UQBpH-7d8JEH..." : ""}
-            onConnect={() => setIsWalletConnected(true)}
-            onDisconnect={() => setIsWalletConnected(false)}
-          />
+          <TONConnectButton userId={user.id} />
         </div>
 
         {/* Recent Transactions */}

@@ -1,44 +1,78 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { TonConnectButton, TonConnectUIProvider, useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
+import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Wallet, Link, Unlink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Wallet, Unlink } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-interface TONConnectButtonProps {
-  isConnected?: boolean;
-  address?: string;
-  onConnect?: () => void;
-  onDisconnect?: () => void;
+interface TONConnectWrapperProps {
+  userId: number;
 }
 
-export const TONConnectButton = ({ 
-  isConnected = false, 
-  address = "",
-  onConnect,
-  onDisconnect 
-}: TONConnectButtonProps) => {
-  const [connecting, setConnecting] = useState(false);
+const TONConnectWrapper = ({ userId }: TONConnectWrapperProps) => {
+  const [tonConnectUI] = useTonConnectUI();
+  const wallet = useTonWallet();
 
-  const handleConnect = async () => {
-    setConnecting(true);
+  useEffect(() => {
+    const saveWalletToDatabase = async () => {
+      if (wallet) {
+        try {
+          console.log('Сохранение кошелька в базу:', wallet.account.address);
+          
+          // Сохраняем адрес кошелька в базу данных
+          const { error } = await supabase
+            .from('telegram_users')
+            .update({
+              wallet_address: wallet.account.address,
+              wallet_chain: wallet.account.chain,
+              updated_at: new Date().toISOString()
+            })
+            .eq('telegram_id', userId);
+
+          if (error) {
+            console.error('Ошибка сохранения кошелька:', error);
+          } else {
+            console.log('Кошелек успешно сохранен в базу');
+            toast.success("TON кошелёк подключен и сохранен!");
+          }
+        } catch (error) {
+          console.error('Ошибка при сохранении кошелька:', error);
+          toast.error("Ошибка сохранения кошелька");
+        }
+      }
+    };
+
+    saveWalletToDatabase();
+  }, [wallet, userId]);
+
+  const handleDisconnect = async () => {
     try {
-      // Здесь будет интеграция с TON Connect
-      toast.success("TON кошелёк подключен!");
-      onConnect?.();
+      await tonConnectUI.disconnect();
+      
+      // Удаляем адрес кошелька из базы данных
+      const { error } = await supabase
+        .from('telegram_users')
+        .update({
+          wallet_address: null,
+          wallet_chain: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('telegram_id', userId);
+
+      if (error) {
+        console.error('Ошибка удаления кошелька:', error);
+      } else {
+        toast.success("TON кошелёк отключен");
+      }
     } catch (error) {
-      toast.error("Ошибка подключения кошелька");
-    } finally {
-      setConnecting(false);
+      console.error('Ошибка отключения кошелька:', error);
+      toast.error("Ошибка отключения кошелька");
     }
   };
 
-  const handleDisconnect = () => {
-    toast.success("TON кошелёк отключен");
-    onDisconnect?.();
-  };
-
-  if (isConnected) {
+  if (wallet) {
     return (
       <Card className="glass-card p-4">
         <div className="flex items-center justify-between">
@@ -49,7 +83,7 @@ export const TONConnectButton = ({
             <div>
               <p className="font-semibold">TON кошелёк подключен</p>
               <p className="text-xs text-muted-foreground font-mono">
-                {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : ""}
+                {wallet.account.address.slice(0, 6)}...{wallet.account.address.slice(-4)}
               </p>
             </div>
           </div>
@@ -74,17 +108,24 @@ export const TONConnectButton = ({
         </div>
         <h3 className="font-semibold mb-2">Подключите TON кошелёк</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Для покупки карт и вывода в блокчейн необходимо подключить кошелёк
+          Для вывода бонусных карт на блокчейн и сдачи в аренду необходимо подключить кошелёк
         </p>
-        <Button 
-          className="w-full bg-gradient-ton"
-          onClick={handleConnect}
-          disabled={connecting}
-        >
-          <Link className="w-4 h-4 mr-2" />
-          {connecting ? "Подключение..." : "Подключить кошелёк"}
-        </Button>
+        <TonConnectButton className="w-full" />
       </div>
     </Card>
+  );
+};
+
+interface TONConnectButtonProps {
+  userId: number;
+}
+
+export const TONConnectButton = ({ userId }: TONConnectButtonProps) => {
+  const manifestUrl = 'https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json';
+
+  return (
+    <TonConnectUIProvider manifestUrl={manifestUrl}>
+      <TONConnectWrapper userId={userId} />
+    </TonConnectUIProvider>
   );
 };
