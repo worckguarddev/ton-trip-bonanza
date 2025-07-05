@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
@@ -53,20 +52,10 @@ const Referrals = () => {
     toast.success("Ссылка скопирована!");
   };
 
-  const shareReferralLink = async () => {
-    if (navigator.share && referralLink) {
-      try {
-        await navigator.share({
-          title: 'Присоединяйтесь к TonTrip Bonanza!',
-          text: 'Получайте бонусы за поездки и покупки NFT карт',
-          url: referralLink,
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-        copyToClipboard(referralLink);
-      }
-    } else {
-      copyToClipboard(referralLink);
+  const getQRCode = () => {
+    setShowQR(!showQR);
+    if (!showQR) {
+      toast.success("QR-код создан!");
     }
   };
 
@@ -130,10 +119,10 @@ const Referrals = () => {
             <Button 
               variant="outline" 
               className="flex-1"
-              onClick={shareReferralLink}
+              onClick={getQRCode}
             >
-              <Share className="w-4 h-4 mr-2" />
-              Поделиться
+              <QrCode className="w-4 h-4 mr-2" />
+              Получить QR
             </Button>
             <Button 
               variant="outline" 
@@ -142,12 +131,6 @@ const Referrals = () => {
             >
               <Copy className="w-4 h-4 mr-2" />
               Копировать
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowQR(!showQR)}
-            >
-              <QrCode className="w-4 h-4" />
             </Button>
           </div>
         </Card>

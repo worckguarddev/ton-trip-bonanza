@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, User, CheckCircle, AlertCircle } from "lucide-react";
 import { useTelegramProfile } from "@/hooks/useTelegramProfile";
 import { useReferralSystem } from "@/hooks/useReferralSystem";
+import { supabase } from "@/integrations/supabase/client";
 import { TelegramUser } from "@/types/telegram";
 import { toast } from "sonner";
 
@@ -13,6 +15,7 @@ const Index = () => {
   const [telegramProfile, setTelegramProfile] = useState<any>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscriptionChecked, setSubscriptionChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
   
   const { getTelegramProfile, checkSubscription, loading, error } = useTelegramProfile();
@@ -33,8 +36,8 @@ const Index = () => {
         // Инициализируем реферальную систему
         initializeReferralSystem(telegramUser.id);
         
-        // Получаем расширенную информацию о пользователе
-        loadTelegramProfile(telegramUser.id);
+        // Проверяем существующего пользователя
+        checkExistingUser(telegramUser.id);
       }
     } else {
       // Для тестирования без Telegram WebApp
@@ -46,9 +49,38 @@ const Index = () => {
         username: "testuser"
       };
       setUser(testUser);
-      loadTelegramProfile(testUser.id);
+      checkExistingUser(testUser.id);
     }
   }, []);
+
+  const checkExistingUser = async (userId: number) => {
+    try {
+      setIsLoading(true);
+      
+      // Проверяем существует ли пользователь в базе
+      const { data: existingUser } = await supabase
+        .from('telegram_users')
+        .select('is_subscribed, subscription_checked_at')
+        .eq('telegram_id', userId)
+        .single();
+
+      if (existingUser && existingUser.is_subscribed && existingUser.subscription_checked_at) {
+        // Пользователь существует и подписка подтверждена - перенаправляем в основное меню
+        console.log('Пользователь с подтвержденной подпиской найден, перенаправляем в меню');
+        navigate('/cards');
+        return;
+      }
+
+      // Если пользователь не найден или подписка не подтверждена, загружаем профиль
+      await loadTelegramProfile(userId);
+    } catch (err) {
+      console.error('Ошибка проверки пользователя:', err);
+      // В случае ошибки загружаем профиль как обычно
+      await loadTelegramProfile(userId);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadTelegramProfile = async (userId: number) => {
     try {
@@ -95,6 +127,20 @@ const Index = () => {
 
   if (error) {
     console.error('Ошибка:', error);
+  }
+
+  // Показываем загрузку пока проверяем пользователя
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto mb-4 bg-gradient-ton rounded-full flex items-center justify-center animate-pulse">
+            <Wallet className="w-10 h-10 text-white" />
+          </div>
+          <p className="text-muted-foreground">Загрузка...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
