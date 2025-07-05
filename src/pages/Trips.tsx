@@ -1,30 +1,69 @@
+
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Car, MapPin, Clock, ExternalLink } from "lucide-react";
+import { Car, MapPin, Clock, ExternalLink, Plus } from "lucide-react";
+import { useTrips } from "@/hooks/useTrips";
+import { useBalance } from "@/hooks/useBalance";
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        initDataUnsafe: {
+          user?: {
+            id: number;
+          };
+        };
+      };
+    };
+  }
+}
 
 const Trips = () => {
-  const availableBonuses = 1250;
-  
-  const recentTrips = [
-    {
-      id: 1,
-      from: "Центр города",
-      to: "Аэропорт", 
-      date: "2024-01-15",
-      bonusesUsed: 200,
-      status: "completed"
-    },
-    {
-      id: 2,
-      from: "Дом",
-      to: "Офис",
-      date: "2024-01-14",
-      bonusesUsed: 150,
-      status: "completed"
+  const [user, setUser] = useState<any>(null);
+  const { trips, loading: tripsLoading, fetchTrips } = useTrips();
+  const { balance, loading: balanceLoading, fetchBalance } = useBalance();
+
+  useEffect(() => {
+    // Получаем пользователя из Telegram WebApp
+    if (window.Telegram?.WebApp) {
+      const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+      if (telegramUser) {
+        setUser(telegramUser);
+        fetchTrips(telegramUser.id);
+        fetchBalance(telegramUser.id);
+      }
+    } else {
+      // Тестовые данные
+      const testUser = { id: 123456789 };
+      setUser(testUser);
+      fetchTrips(testUser.id);
+      fetchBalance(testUser.id);
     }
-  ];
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-500';
+      case 'active': return 'bg-blue-500';
+      case 'planned': return 'bg-yellow-500';
+      case 'cancelled': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed': return 'Завершена';
+      case 'active': return 'Активна';
+      case 'planned': return 'Запланирована';
+      case 'cancelled': return 'Отменена';
+      default: return 'Неизвестно';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white pb-20">
@@ -50,7 +89,7 @@ const Trips = () => {
             </div>
             <h2 className="text-lg font-semibold mb-2">Доступно бонусов</h2>
             <div className="text-3xl font-bold gradient-text mb-4">
-              {availableBonuses.toLocaleString()}
+              {balanceLoading ? '...' : (balance?.bonus_points || 0).toLocaleString()}
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               Используйте бонусы для оплаты поездок в приложении такси
@@ -113,30 +152,52 @@ const Trips = () => {
           </Button>
         </Card>
 
-        {/* Recent Trips */}
+        {/* User Trips */}
         <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-4">Последние поездки</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Мои поездки ({trips.length})</h2>
+            <Button size="sm" className="bg-gradient-ton">
+              <Plus className="w-4 h-4 mr-1" />
+              Добавить
+            </Button>
+          </div>
           <div className="space-y-3">
-            {recentTrips.map((trip) => (
-              <Card key={trip.id} className="glass-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-blue-400" />
-                    <span className="text-sm font-medium">{trip.from} → {trip.to}</span>
-                  </div>
-                  <Badge className={trip.status === 'completed' ? 'bg-green-500' : 'bg-yellow-500'}>
-                    Завершена
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{new Date(trip.date).toLocaleDateString('ru-RU')}</span>
-                  </div>
-                  <span>Использовано: {trip.bonusesUsed} бонусов</span>
-                </div>
+            {tripsLoading ? (
+              <Card className="glass-card p-4 text-center">
+                <p className="text-muted-foreground">Загрузка поездок...</p>
               </Card>
-            ))}
+            ) : trips.length > 0 ? (
+              trips.map((trip) => (
+                <Card key={trip.id} className="glass-card p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-blue-400" />
+                      <span className="text-sm font-medium">{trip.from_location} → {trip.to_location}</span>
+                    </div>
+                    <Badge className={getStatusColor(trip.status)}>
+                      {getStatusText(trip.status)}
+                    </Badge>
+                  </div>
+                  <h4 className="font-medium mb-1">{trip.title}</h4>
+                  {trip.description && (
+                    <p className="text-xs text-muted-foreground mb-2">{trip.description}</p>
+                  )}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      <span>{new Date(trip.departure_date).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                    {trip.bonus_earned && (
+                      <span>Заработано: {trip.bonus_earned} бонусов</span>
+                    )}
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <Card className="glass-card p-6 text-center">
+                <p className="text-muted-foreground">У вас пока нет поездок</p>
+              </Card>
+            )}
           </div>
         </div>
       </div>

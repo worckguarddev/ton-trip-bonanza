@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { NFTCard } from "@/components/NFTCard";
 import { Card } from "@/components/ui/card";
@@ -6,88 +7,91 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift } from "lucide-react";
 import { toast } from "sonner";
+import { useCards } from "@/hooks/useCards";
+
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        initDataUnsafe: {
+          user?: {
+            id: number;
+          };
+        };
+      };
+    };
+  }
+}
 
 const Cards = () => {
-  const availableCards = [
-    {
-      id: "1",
-      title: "Золотая карта VIP",
-      description: "Премиум доступ ко всем функциям",
-      image: "/placeholder.svg",
-      price: 5000,
-      rarity: "legendary" as const,
-      owned: false
-    },
-    {
-      id: "2",
-      title: "Серебряная карта Pro",
-      description: "Расширенные возможности",
-      image: "/placeholder.svg",
-      price: 2500,
-      rarity: "epic" as const,
-      owned: false
-    },
-    {
-      id: "3",
-      title: "Бронзовая карта Basic",
-      description: "Базовые функции системы",
-      image: "/placeholder.svg",
-      price: 1000,
-      rarity: "rare" as const,
-      owned: false
-    },
-    {
-      id: "4",
-      title: "Карта поездок",
-      description: "Бонусы на транспорт",
-      image: "/placeholder.svg",
-      price: 500,
-      rarity: "common" as const,
-      owned: false
-    },
-    {
-      id: "5",
-      title: "Партнерская карта",
-      description: "Скидки у партнеров",
-      image: "/placeholder.svg",
-      price: 1500,
-      rarity: "rare" as const,
-      owned: false
+  const [user, setUser] = useState<any>(null);
+  const { availableCards, userCards, loading, fetchAvailableCards, fetchUserCards, purchaseCard, rentCard, withdrawCard } = useCards();
+
+  useEffect(() => {
+    // Получаем пользователя из Telegram WebApp
+    if (window.Telegram?.WebApp) {
+      const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+      if (telegramUser) {
+        setUser(telegramUser);
+        fetchUserCards(telegramUser.id);
+      }
+    } else {
+      // Тестовые данные
+      const testUser = { id: 123456789 };
+      setUser(testUser);
+      fetchUserCards(testUser.id);
     }
-  ];
 
-  const purchasedCards = [
-    {
-      id: "p1",
-      title: "Студенческая карта",
-      description: "Скидки для студентов",
-      image: "/placeholder.svg",
-      price: 300,
-      rarity: "common" as const,
-      owned: true
-    },
-    {
-      id: "p2",
-      title: "Карта лояльности",
-      description: "Накопительная система бонусов",
-      image: "/placeholder.svg",
-      price: 800,
-      rarity: "rare" as const,
-      owned: true
+    fetchAvailableCards();
+  }, []);
+
+  const handlePurchase = async (id: string) => {
+    if (!user?.id) {
+      toast.error('Пользователь не найден');
+      return;
     }
-  ];
 
-  const handlePurchase = (id: string) => {
-    toast.success("Карта успешно приобретена!");
+    const success = await purchaseCard(id, user.id);
+    if (success) {
+      await fetchUserCards(user.id);
+    }
   };
 
-  const handleWithdraw = (id: string) => {
-    toast.success("Заявка на вывод отправлена администратору");
+  const handleWithdraw = async (id: string) => {
+    // В реальном приложении здесь будет диалог для ввода адреса кошелька
+    const success = await withdrawCard(id, 'EQD..._placeholder_address');
+    if (success) {
+      await fetchUserCards(user.id);
+    }
   };
 
-  const handleRent = (id: string) => {
-    toast.success("Карта выставлена на аренду");
+  const handleRent = async (id: string) => {
+    // В реальном приложении здесь будет диалог для ввода цены
+    const success = await rentCard(id, 100);
+    if (success) {
+      await fetchUserCards(user.id);
+    }
   };
+
+  const transformedAvailableCards = availableCards.map(card => ({
+    id: card.id,
+    title: card.title,
+    description: card.description || '',
+    image: card.image_url || '/placeholder.svg',
+    price: Number(card.price),
+    rarity: card.rarity,
+    owned: false
+  }));
+
+  const transformedUserCards = userCards.map(card => ({
+    id: card.user_card_id,
+    title: card.title,
+    description: card.description || '',
+    image: card.image_url || '/placeholder.svg',
+    price: Number(card.price),
+    rarity: card.rarity,
+    owned: true
+  }));
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white pb-20">
@@ -109,24 +113,38 @@ const Cards = () => {
         <Tabs defaultValue="available" className="mb-6">
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="available">Доступные</TabsTrigger>
-            <TabsTrigger value="purchased">Мои карты</TabsTrigger>
+            <TabsTrigger value="purchased">Мои карты ({transformedUserCards.length})</TabsTrigger>
           </TabsList>
           
           <TabsContent value="available" className="space-y-4">
-            {availableCards.map((card) => (
-              <NFTCard
-                key={card.id}
-                {...card}
-                onPurchase={handlePurchase}
-                onWithdraw={handleWithdraw}
-                onRent={handleRent}
-              />
-            ))}
+            {loading ? (
+              <Card className="glass-card p-6 text-center">
+                <p className="text-muted-foreground">Загрузка карт...</p>
+              </Card>
+            ) : transformedAvailableCards.length > 0 ? (
+              transformedAvailableCards.map((card) => (
+                <NFTCard
+                  key={card.id}
+                  {...card}
+                  onPurchase={handlePurchase}
+                  onWithdraw={handleWithdraw}
+                  onRent={handleRent}
+                />
+              ))
+            ) : (
+              <Card className="glass-card p-6 text-center">
+                <p className="text-muted-foreground">Нет доступных карт</p>
+              </Card>
+            )}
           </TabsContent>
           
           <TabsContent value="purchased" className="space-y-4">
-            {purchasedCards.length > 0 ? (
-              purchasedCards.map((card) => (
+            {loading ? (
+              <Card className="glass-card p-6 text-center">
+                <p className="text-muted-foreground">Загрузка ваших карт...</p>
+              </Card>
+            ) : transformedUserCards.length > 0 ? (
+              transformedUserCards.map((card) => (
                 <NFTCard
                   key={card.id}
                   {...card}

@@ -9,6 +9,87 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      bonus_cards: {
+        Row: {
+          benefits: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_available: boolean | null
+          price: number
+          rarity: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          benefits?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          price: number
+          rarity: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          benefits?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_available?: boolean | null
+          price?: number
+          rarity?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          bonus_amount: number | null
+          created_at: string
+          id: string
+          referred_telegram_id: number
+          referrer_telegram_id: number
+          status: string
+        }
+        Insert: {
+          bonus_amount?: number | null
+          created_at?: string
+          id?: string
+          referred_telegram_id: number
+          referrer_telegram_id: number
+          status?: string
+        }
+        Update: {
+          bonus_amount?: number | null
+          created_at?: string
+          id?: string
+          referred_telegram_id?: number
+          referrer_telegram_id?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_referred_telegram_id_fkey"
+            columns: ["referred_telegram_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_users"
+            referencedColumns: ["telegram_id"]
+          },
+          {
+            foreignKeyName: "referrals_referrer_telegram_id_fkey"
+            columns: ["referrer_telegram_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_users"
+            referencedColumns: ["telegram_id"]
+          },
+        ]
+      }
       telegram_users: {
         Row: {
           bio: string | null
@@ -53,6 +134,151 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
+      }
+      trips: {
+        Row: {
+          bonus_earned: number | null
+          created_at: string
+          departure_date: string
+          description: string | null
+          from_location: string
+          id: string
+          price: number | null
+          return_date: string | null
+          status: string
+          title: string
+          to_location: string
+          updated_at: string
+          user_telegram_id: number
+        }
+        Insert: {
+          bonus_earned?: number | null
+          created_at?: string
+          departure_date: string
+          description?: string | null
+          from_location: string
+          id?: string
+          price?: number | null
+          return_date?: string | null
+          status?: string
+          title: string
+          to_location: string
+          updated_at?: string
+          user_telegram_id: number
+        }
+        Update: {
+          bonus_earned?: number | null
+          created_at?: string
+          departure_date?: string
+          description?: string | null
+          from_location?: string
+          id?: string
+          price?: number | null
+          return_date?: string | null
+          status?: string
+          title?: string
+          to_location?: string
+          updated_at?: string
+          user_telegram_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_user_telegram_id_fkey"
+            columns: ["user_telegram_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_users"
+            referencedColumns: ["telegram_id"]
+          },
+        ]
+      }
+      user_balances: {
+        Row: {
+          bonus_points: number | null
+          id: string
+          ton_balance: number | null
+          total_earned: number | null
+          total_spent: number | null
+          updated_at: string
+          user_telegram_id: number
+        }
+        Insert: {
+          bonus_points?: number | null
+          id?: string
+          ton_balance?: number | null
+          total_earned?: number | null
+          total_spent?: number | null
+          updated_at?: string
+          user_telegram_id: number
+        }
+        Update: {
+          bonus_points?: number | null
+          id?: string
+          ton_balance?: number | null
+          total_earned?: number | null
+          total_spent?: number | null
+          updated_at?: string
+          user_telegram_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_balances_user_telegram_id_fkey"
+            columns: ["user_telegram_id"]
+            isOneToOne: true
+            referencedRelation: "telegram_users"
+            referencedColumns: ["telegram_id"]
+          },
+        ]
+      }
+      user_cards: {
+        Row: {
+          blockchain_address: string | null
+          card_id: string
+          id: string
+          is_rented: boolean | null
+          is_withdrawn: boolean | null
+          purchased_at: string
+          rent_price: number | null
+          rent_until: string | null
+          user_telegram_id: number
+        }
+        Insert: {
+          blockchain_address?: string | null
+          card_id: string
+          id?: string
+          is_rented?: boolean | null
+          is_withdrawn?: boolean | null
+          purchased_at?: string
+          rent_price?: number | null
+          rent_until?: string | null
+          user_telegram_id: number
+        }
+        Update: {
+          blockchain_address?: string | null
+          card_id?: string
+          id?: string
+          is_rented?: boolean | null
+          is_withdrawn?: boolean | null
+          purchased_at?: string
+          rent_price?: number | null
+          rent_until?: string | null
+          user_telegram_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_cards_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "bonus_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_cards_user_telegram_id_fkey"
+            columns: ["user_telegram_id"]
+            isOneToOne: false
+            referencedRelation: "telegram_users"
+            referencedColumns: ["telegram_id"]
+          },
+        ]
       }
     }
     Views: {
