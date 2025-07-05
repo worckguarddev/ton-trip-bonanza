@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -8,7 +9,7 @@ interface AdminCard {
   description: string | null;
   image_url: string | null;
   price: number;
-  rarity: string; // Изменили на string вместо строгого типа
+  rarity: string;
   is_available: boolean | null;
   benefits: any;
   created_at: string;
@@ -62,6 +63,8 @@ export const useAdmin = () => {
   }) => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { error } = await supabase
         .from('bonus_cards')
         .insert([{
@@ -87,6 +90,8 @@ export const useAdmin = () => {
   const updateCard = async (cardId: string, updates: Partial<AdminCard>) => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { error } = await supabase
         .from('bonus_cards')
         .update(updates)
@@ -110,6 +115,8 @@ export const useAdmin = () => {
   const deleteCard = async (cardId: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { error } = await supabase
         .from('bonus_cards')
         .delete()
@@ -133,6 +140,8 @@ export const useAdmin = () => {
   const getAllCards = async (): Promise<AdminCard[]> => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { data, error } = await supabase
         .from('bonus_cards')
         .select('*')
@@ -145,6 +154,7 @@ export const useAdmin = () => {
       console.error('Error fetching cards:', err);
       const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки карт';
       setError(errorMessage);
+      toast.error(errorMessage);
       return [];
     } finally {
       setLoading(false);
@@ -155,9 +165,10 @@ export const useAdmin = () => {
   const getAllUsers = async (): Promise<AdminUser[]> => {
     try {
       setLoading(true);
+      setError(null);
       console.log('Загружаем пользователей...');
       
-      // Получаем всех пользователей с их кошельками
+      // Получаем всех пользователей
       const { data: users, error: usersError } = await supabase
         .from('telegram_users')
         .select('*')
@@ -237,6 +248,7 @@ export const useAdmin = () => {
   const updateUserBalance = async (telegramId: number, balanceType: 'rub_balance' | 'ton_balance' | 'bonus_points', amount: number) => {
     try {
       setLoading(true);
+      setError(null);
       
       // Получаем текущий баланс
       const { data: currentBalance } = await supabase
@@ -280,6 +292,7 @@ export const useAdmin = () => {
   const getWithdrawalRequests = async (): Promise<WithdrawalRequest[]> => {
     try {
       setLoading(true);
+      setError(null);
       console.log('Загружаем заявки на вывод...');
       
       const { data, error } = await supabase
@@ -338,6 +351,8 @@ export const useAdmin = () => {
   const approveWithdrawal = async (requestId: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
       // Здесь можно добавить логику для реального вывода в блокчейн
       // Пока просто отмечаем как обработанную
       toast.success('Заявка на вывод одобрена');
@@ -356,6 +371,8 @@ export const useAdmin = () => {
   const rejectWithdrawal = async (requestId: string) => {
     try {
       setLoading(true);
+      setError(null);
+      
       const { error } = await supabase
         .from('user_cards')
         .update({

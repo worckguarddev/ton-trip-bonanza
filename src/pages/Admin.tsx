@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
@@ -57,6 +58,7 @@ const Admin = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [withdrawalRequests, setWithdrawalRequests] = useState<any[]>([]);
   const [editingCard, setEditingCard] = useState<any>(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -64,6 +66,8 @@ const Admin = () => {
 
   const loadData = async () => {
     console.log('Загружаем данные админ панели...');
+    setIsLoadingData(true);
+    
     try {
       const [cardsData, usersData, withdrawalsData] = await Promise.all([
         getAllCards(),
@@ -83,6 +87,8 @@ const Admin = () => {
     } catch (error) {
       console.error('Ошибка загрузки данных:', error);
       toast.error('Ошибка загрузки данных админ панели');
+    } finally {
+      setIsLoadingData(false);
     }
   };
 
@@ -97,7 +103,7 @@ const Admin = () => {
       description: newCard.description,
       price: parseFloat(newCard.price),
       rarity: newCard.rarity,
-      image_url: newCard.image_url || null
+      image_url: newCard.image_url || undefined
     });
 
     if (success) {
@@ -163,10 +169,10 @@ const Admin = () => {
             variant="outline" 
             size="sm" 
             onClick={loadData}
-            disabled={loading}
+            disabled={isLoadingData}
             className="ml-auto"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLoadingData ? 'animate-spin' : ''}`} />
             Обновить
           </Button>
         </div>
@@ -234,60 +240,73 @@ const Admin = () => {
             {/* Cards List */}
             <Card className="glass-card p-4">
               <h3 className="font-semibold mb-4">Управление картами</h3>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Название</TableHead>
-                      <TableHead>Цена</TableHead>
-                      <TableHead>Редкость</TableHead>
-                      <TableHead>Статус</TableHead>
-                      <TableHead>Действия</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {cards.map((card) => (
-                      <TableRow key={card.id}>
-                        <TableCell className="font-medium">{card.title}</TableCell>
-                        <TableCell>{card.price} ₽</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{card.rarity}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={card.is_available ? "default" : "secondary"}>
-                            {card.is_available ? "Доступна" : "Скрыта"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => toggleCardAvailability(card.id, card.is_available)}
-                            >
-                              {card.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setEditingCard(card)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleDeleteCard(card.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+              {isLoadingData ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
+                  <p>Загрузка карт...</p>
+                </div>
+              ) : cards.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Карты не найдены</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Название</TableHead>
+                        <TableHead>Цена</TableHead>
+                        <TableHead>Редкость</TableHead>
+                        <TableHead>Статус</TableHead>
+                        <TableHead>Действия</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {cards.map((card) => (
+                        <TableRow key={card.id}>
+                          <TableCell className="font-medium">{card.title}</TableCell>
+                          <TableCell>{card.price} ₽</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{card.rarity}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={card.is_available ? "default" : "secondary"}>
+                              {card.is_available ? "Доступна" : "Скрыта"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => toggleCardAvailability(card.id, card.is_available)}
+                                disabled={loading}
+                              >
+                                {card.is_available ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingCard(card)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteCard(card.id)}
+                                disabled={loading}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </Card>
           </TabsContent>
 
@@ -298,7 +317,7 @@ const Admin = () => {
                 <Users className="w-5 h-5" />
                 Управление пользователями ({users.length})
               </h3>
-              {loading ? (
+              {isLoadingData ? (
                 <div className="text-center py-8">
                   <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
                   <p>Загрузка пользователей...</p>
@@ -372,6 +391,7 @@ const Admin = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleUpdateUserBalance(user.telegram_id, 'rub_balance', 100)}
+                                disabled={loading}
                               >
                                 +100₽
                               </Button>
@@ -379,6 +399,7 @@ const Admin = () => {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleUpdateUserBalance(user.telegram_id, 'bonus_points', 500)}
+                                disabled={loading}
                               >
                                 +500 бонусов
                               </Button>
@@ -397,7 +418,7 @@ const Admin = () => {
           <TabsContent value="withdrawals" className="space-y-4">
             <Card className="glass-card p-4">
               <h3 className="font-semibold mb-4">Заявки на вывод ({withdrawalRequests.length})</h3>
-              {loading ? (
+              {isLoadingData ? (
                 <div className="text-center py-8">
                   <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
                   <p>Загрузка заявок...</p>
@@ -441,6 +462,7 @@ const Admin = () => {
                           size="sm"
                           className="flex-1 bg-green-600 hover:bg-green-700"
                           onClick={() => handleApproveWithdrawal(request.id)}
+                          disabled={loading}
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Одобрить
@@ -450,6 +472,7 @@ const Admin = () => {
                           variant="destructive"
                           className="flex-1"
                           onClick={() => handleRejectWithdrawal(request.id)}
+                          disabled={loading}
                         >
                           <XCircle className="w-4 h-4 mr-2" />
                           Отклонить
