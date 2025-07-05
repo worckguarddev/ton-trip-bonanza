@@ -23,6 +23,7 @@ export default function Cards() {
   const [selectedCardId, setSelectedCardId] = useState<string>('');
   const [rentPrice, setRentPrice] = useState('');
   const [withdrawAddress, setWithdrawAddress] = useState('');
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Получаем telegram ID из window.Telegram или используем тестовый ID
   const getTelegramId = () => {
@@ -36,11 +37,28 @@ export default function Cards() {
   const isWalletConnected = tonConnectUI.connected;
 
   useEffect(() => {
-    console.log('Cards: Загружаем данные для пользователя:', telegramId);
-    fetchAvailableCards();
-    fetchBalance(telegramId);
-    fetchUserCards(telegramId);
-    initializeReferralSystem(telegramId);
+    const loadData = async () => {
+      console.log('Cards: Загружаем данные для пользователя:', telegramId);
+      
+      try {
+        // Загружаем все данные параллельно
+        await Promise.all([
+          fetchAvailableCards(),
+          fetchBalance(telegramId),
+          fetchUserCards(telegramId),
+          initializeReferralSystem(telegramId)
+        ]);
+        
+        console.log('Все данные загружены успешно');
+        setDataLoaded(true);
+      } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+        toast.error('Ошибка загрузки данных');
+        setDataLoaded(true); // Показываем интерфейс даже при ошибке
+      }
+    };
+
+    loadData();
   }, [telegramId]);
 
   const handlePurchase = async (cardId: string) => {
@@ -118,7 +136,8 @@ export default function Cards() {
     }
   };
 
-  if (loading) {
+  // Показываем загрузку только если данные еще не были загружены
+  if (loading && !dataLoaded) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white flex items-center justify-center">
         <div className="text-center">
@@ -152,7 +171,9 @@ export default function Cards() {
         <TabsContent value="available" className="space-y-4">
           {availableCards.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Карты не найдены</p>
+              <p className="text-muted-foreground">
+                {dataLoaded ? 'Карты не найдены' : 'Загрузка карт...'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -177,7 +198,9 @@ export default function Cards() {
         <TabsContent value="owned" className="space-y-4">
           {userCards.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">У вас пока нет карт</p>
+              <p className="text-muted-foreground">
+                {dataLoaded ? 'У вас пока нет карт' : 'Загрузка ваших карт...'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
