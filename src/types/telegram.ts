@@ -9,14 +9,14 @@ export interface TelegramUser {
 }
 
 export interface TelegramWebApp {
-  ready?: () => void;
-  expand?: () => void;
-  MainButton?: {
+  ready: () => void;
+  expand: () => void;
+  MainButton: {
     text: string;
     show: () => void;
     hide: () => void;
   };
-  initDataUnsafe?: {
+  initDataUnsafe: {
     user?: TelegramUser;
   };
 }
