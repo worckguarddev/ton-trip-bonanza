@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -23,6 +22,8 @@ interface AdminUser {
   username: string | null;
   is_subscribed: boolean | null;
   created_at: string;
+  wallet_address: string | null;
+  wallet_chain: string | null;
   balance?: {
     rub_balance: number;
     ton_balance: number;
@@ -43,6 +44,7 @@ interface WithdrawalRequest {
   status: 'pending' | 'approved' | 'rejected';
   user_name?: string;
   card_title?: string;
+  user_wallet_address?: string;
 }
 
 export const useAdmin = () => {
@@ -153,38 +155,54 @@ export const useAdmin = () => {
   const getAllUsers = async (): Promise<AdminUser[]> => {
     try {
       setLoading(true);
+      console.log('Загружаем пользователей...');
+      
+      // Получаем всех пользователей с их кошельками
       const { data: users, error: usersError } = await supabase
         .from('telegram_users')
-        .select(`
-          id,
-          telegram_id,
-          first_name,
-          last_name,
-          username,
-          is_subscribed,
-          created_at
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error('Ошибка загрузки пользователей:', usersError);
+        throw usersError;
+      }
+
+      console.log('Загружено пользователей:', users?.length || 0);
+
+      if (!users || users.length === 0) {
+        return [];
+      }
 
       // Получаем балансы пользователей
-      const { data: balances } = await supabase
+      const { data: balances, error: balancesError } = await supabase
         .from('user_balances')
         .select('*');
 
+      if (balancesError) {
+        console.error('Ошибка загрузки балансов:', balancesError);
+      }
+
       // Получаем количество карт у каждого пользователя
-      const { data: userCards } = await supabase
+      const { data: userCards, error: cardsError } = await supabase
         .from('user_cards')
         .select('user_telegram_id');
 
+      if (cardsError) {
+        console.error('Ошибка загрузки карт пользователей:', cardsError);
+      }
+
       // Получаем количество рефералов
-      const { data: referrals } = await supabase
+      const { data: referrals, error: referralsError } = await supabase
         .from('referrals')
         .select('referrer_telegram_id');
 
+      if (referralsError) {
+        console.error('Ошибка загрузки рефералов:', referralsError);
+      }
+
       // Объединяем данные
-      const enrichedUsers = (users || []).map(user => {
+      const enrichedUsers = users.map(user => {
         const balance = balances?.find(b => b.user_telegram_id === user.telegram_id);
         const cardsCount = userCards?.filter(c => c.user_telegram_id === user.telegram_id).length || 0;
         const referralsCount = referrals?.filter(r => r.referrer_telegram_id === user.telegram_id).length || 0;
@@ -203,11 +221,13 @@ export const useAdmin = () => {
         };
       });
 
+      console.log('Обогащенные данные пользователей:', enrichedUsers);
       return enrichedUsers;
     } catch (err) {
       console.error('Error fetching users:', err);
       const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки пользователей';
       setError(errorMessage);
+      toast.error(errorMessage);
       return [];
     } finally {
       setLoading(false);
@@ -260,6 +280,8 @@ export const useAdmin = () => {
   const getWithdrawalRequests = async (): Promise<WithdrawalRequest[]> => {
     try {
       setLoading(true);
+      console.log('Загружаем заявки на вывод...');
+      
       const { data, error } = await supabase
         .from('user_cards')
         .select(`
@@ -274,13 +296,19 @@ export const useAdmin = () => {
           ),
           telegram_users!user_cards_user_telegram_id_fkey (
             first_name,
-            last_name
+            last_name,
+            wallet_address
           )
         `)
         .eq('is_withdrawn', true)
         .not('blockchain_address', 'is', null);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Ошибка загрузки заявок:', error);
+        throw error;
+      }
+
+      console.log('Загружено заявок на вывод:', data?.length || 0);
 
       const requests = (data || []).map(item => ({
         id: item.id,
@@ -290,14 +318,17 @@ export const useAdmin = () => {
         requested_at: item.purchased_at,
         status: 'pending' as const,
         user_name: item.telegram_users ? `${item.telegram_users.first_name} ${item.telegram_users.last_name || ''}`.trim() : 'Неизвестный',
-        card_title: item.bonus_cards?.title || 'Неизвестная карта'
+        card_title: item.bonus_cards?.title || 'Неизвестная карта',
+        user_wallet_address: item.telegram_users?.wallet_address || null
       }));
 
+      console.log('Обработанные заявки:', requests);
       return requests;
     } catch (err) {
       console.error('Error fetching withdrawal requests:', err);
       const errorMessage = err instanceof Error ? err.message : 'Ошибка загрузки заявок';
       setError(errorMessage);
+      toast.error(errorMessage);
       return [];
     } finally {
       setLoading(false);

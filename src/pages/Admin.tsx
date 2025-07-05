@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
@@ -24,7 +23,9 @@ import {
   CheckCircle, 
   XCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Wallet,
+  RefreshCw
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -62,15 +63,27 @@ const Admin = () => {
   }, []);
 
   const loadData = async () => {
-    const [cardsData, usersData, withdrawalsData] = await Promise.all([
-      getAllCards(),
-      getAllUsers(),
-      getWithdrawalRequests()
-    ]);
-    
-    setCards(cardsData);
-    setUsers(usersData);
-    setWithdrawalRequests(withdrawalsData);
+    console.log('Загружаем данные админ панели...');
+    try {
+      const [cardsData, usersData, withdrawalsData] = await Promise.all([
+        getAllCards(),
+        getAllUsers(),
+        getWithdrawalRequests()
+      ]);
+      
+      console.log('Данные загружены:', { 
+        cards: cardsData.length, 
+        users: usersData.length, 
+        withdrawals: withdrawalsData.length 
+      });
+      
+      setCards(cardsData);
+      setUsers(usersData);
+      setWithdrawalRequests(withdrawalsData);
+    } catch (error) {
+      console.error('Ошибка загрузки данных:', error);
+      toast.error('Ошибка загрузки данных админ панели');
+    }
   };
 
   const handleCreateCard = async () => {
@@ -146,14 +159,24 @@ const Admin = () => {
             </Button>
           </Link>
           <h1 className="text-2xl font-bold">Админ панель</h1>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={loadData}
+            disabled={loading}
+            className="ml-auto"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Обновить
+          </Button>
         </div>
 
         {/* Admin Tabs */}
         <Tabs defaultValue="cards" className="mb-6">
           <TabsList className="grid w-full grid-cols-3 mb-4">
-            <TabsTrigger value="cards">Карты</TabsTrigger>
-            <TabsTrigger value="users">Пользователи</TabsTrigger>
-            <TabsTrigger value="withdrawals">Заявки</TabsTrigger>
+            <TabsTrigger value="cards">Карты ({cards.length})</TabsTrigger>
+            <TabsTrigger value="users">Пользователи ({users.length})</TabsTrigger>
+            <TabsTrigger value="withdrawals">Заявки ({withdrawalRequests.length})</TabsTrigger>
           </TabsList>
 
           {/* Cards Management */}
@@ -275,69 +298,98 @@ const Admin = () => {
                 <Users className="w-5 h-5" />
                 Управление пользователями ({users.length})
               </h3>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Пользователь</TableHead>
-                      <TableHead>ID</TableHead>
-                      <TableHead>Баланс</TableHead>
-                      <TableHead>Карты</TableHead>
-                      <TableHead>Рефералы</TableHead>
-                      <TableHead>Действия</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">
-                              {user.first_name} {user.last_name || ''}
+              {loading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
+                  <p>Загрузка пользователей...</p>
+                </div>
+              ) : users.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Пользователи не найдены</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Пользователь</TableHead>
+                        <TableHead>Telegram ID</TableHead>
+                        <TableHead>Кошелёк</TableHead>
+                        <TableHead>Баланс</TableHead>
+                        <TableHead>Карты</TableHead>
+                        <TableHead>Рефералы</TableHead>
+                        <TableHead>Действия</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">
+                                {user.first_name} {user.last_name || ''}
+                              </div>
+                              {user.username && (
+                                <div className="text-sm text-muted-foreground">
+                                  @{user.username}
+                                </div>
+                              )}
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(user.created_at).toLocaleDateString('ru-RU')}
+                              </div>
                             </div>
-                            {user.username && (
-                              <div className="text-sm text-muted-foreground">
-                                @{user.username}
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {user.telegram_id}
+                          </TableCell>
+                          <TableCell>
+                            {user.wallet_address ? (
+                              <div className="flex items-center gap-2">
+                                <Wallet className="w-4 h-4 text-green-500" />
+                                <div className="font-mono text-xs">
+                                  {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-muted-foreground text-sm">
+                                Не подключен
                               </div>
                             )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {user.telegram_id}
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div>₽{user.balance?.rub_balance || 0}</div>
-                            <div className="text-muted-foreground">
-                              Бонусы: {user.balance?.bonus_points || 0}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div>₽{user.balance?.rub_balance || 0}</div>
+                              <div className="text-muted-foreground">
+                                Бонусы: {user.balance?.bonus_points || 0}
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{user.cards_count || 0}</TableCell>
-                        <TableCell>{user.referrals_count || 0}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUpdateUserBalance(user.telegram_id, 'rub_balance', 100)}
-                            >
-                              +100₽
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleUpdateUserBalance(user.telegram_id, 'bonus_points', 500)}
-                            >
-                              +500 бонусов
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                          </TableCell>
+                          <TableCell>{user.cards_count || 0}</TableCell>
+                          <TableCell>{user.referrals_count || 0}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateUserBalance(user.telegram_id, 'rub_balance', 100)}
+                              >
+                                +100₽
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleUpdateUserBalance(user.telegram_id, 'bonus_points', 500)}
+                              >
+                                +500 бонусов
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </Card>
           </TabsContent>
 
@@ -345,7 +397,12 @@ const Admin = () => {
           <TabsContent value="withdrawals" className="space-y-4">
             <Card className="glass-card p-4">
               <h3 className="font-semibold mb-4">Заявки на вывод ({withdrawalRequests.length})</h3>
-              {withdrawalRequests.length === 0 ? (
+              {loading ? (
+                <div className="text-center py-8">
+                  <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-2" />
+                  <p>Загрузка заявок...</p>
+                </div>
+              ) : withdrawalRequests.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   Нет заявок на вывод
                 </p>
@@ -354,14 +411,26 @@ const Admin = () => {
                   {withdrawalRequests.map((request) => (
                     <Card key={request.id} className="glass-card p-4">
                       <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold">{request.user_name}</h4>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold">{request.user_name}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              ID: {request.user_telegram_id}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-1">
                             Карта: {request.card_title}
                           </p>
-                          <p className="text-xs font-mono text-muted-foreground mt-1">
-                            {request.blockchain_address}
-                          </p>
+                          <div className="space-y-1">
+                            <p className="text-xs font-mono text-muted-foreground">
+                              <span className="text-white">Адрес вывода:</span> {request.blockchain_address}
+                            </p>
+                            {request.user_wallet_address && (
+                              <p className="text-xs font-mono text-muted-foreground">
+                                <span className="text-white">Кошелёк пользователя:</span> {request.user_wallet_address}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <Badge variant="outline">
                           {new Date(request.requested_at).toLocaleDateString('ru-RU')}
