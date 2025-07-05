@@ -60,6 +60,7 @@ const Cards = () => {
 
     console.log('Покупка карты:', { cardId: id, userId: user.id, cardPrice: card.price, currentBalance: balance?.rub_balance });
 
+    // Выполняем покупку
     const success = await purchaseCard(id, user.id, card.price);
     if (success) {
       console.log('Покупка успешна, обрабатываем реферальный бонус');
@@ -67,9 +68,11 @@ const Cards = () => {
       // Обрабатываем реферальный бонус
       await processReferralBonus(user.id, card.price);
 
-      // Обновляем данные
+      // Обновляем данные пользователя
       await fetchUserCards(user.id);
       await fetchBalance(user.id);
+      
+      console.log('Все данные обновлены после покупки');
     }
   };
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -109,14 +108,14 @@ export const useCards = () => {
       
       console.log('Начало покупки карты:', { cardId, telegramId, cardPrice });
       
-      // Сначала проверяем текущий баланс
+      // Проверяем баланс пользователя
       const { data: balanceData, error: balanceError } = await supabase
         .from('user_balances')
         .select('rub_balance, total_spent')
         .eq('user_telegram_id', telegramId)
         .single();
 
-      if (balanceError) {
+      if (balanceError && balanceError.code !== 'PGRST116') {
         console.error('Ошибка получения баланса:', balanceError);
         throw new Error('Не удалось получить баланс пользователя');
       }
