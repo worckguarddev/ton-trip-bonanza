@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
@@ -26,11 +25,13 @@ import {
   Eye,
   EyeOff,
   Wallet,
-  RefreshCw
+  RefreshCw,
+  Settings
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useAdmin } from "@/hooks/useAdmin";
+import { BotSettings } from "@/components/admin/BotSettings";
 
 const Admin = () => {
   const {
@@ -179,10 +180,14 @@ const Admin = () => {
 
         {/* Admin Tabs */}
         <Tabs defaultValue="cards" className="mb-6">
-          <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsList className="grid w-full grid-cols-4 mb-4">
             <TabsTrigger value="cards">Карты ({cards.length})</TabsTrigger>
             <TabsTrigger value="users">Пользователи ({users.length})</TabsTrigger>
             <TabsTrigger value="withdrawals">Заявки ({withdrawalRequests.length})</TabsTrigger>
+            <TabsTrigger value="settings">
+              <Settings className="w-4 h-4 mr-1" />
+              Настройки
+            </TabsTrigger>
           </TabsList>
 
           {/* Cards Management */}
@@ -483,6 +488,11 @@ const Admin = () => {
                 </div>
               )}
             </Card>
+          </TabsContent>
+
+          {/* Bot Settings */}
+          <TabsContent value="settings" className="space-y-4">
+            <BotSettings loading={loading} />
           </TabsContent>
         </Tabs>
       </div>
