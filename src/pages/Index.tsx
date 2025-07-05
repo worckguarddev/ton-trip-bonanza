@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, User, CheckCircle, AlertCircle } from "lucide-react";
+import { Wallet, User, CheckCircle, AlertCircle, Settings } from "lucide-react";
 import { useTelegramProfile } from "@/hooks/useTelegramProfile";
 import { useReferralSystem } from "@/hooks/useReferralSystem";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,42 +21,66 @@ const Index = () => {
   const { getTelegramProfile, checkSubscription, loading, error } = useTelegramProfile();
   const { initializeReferralSystem } = useReferralSystem();
 
+  // Проверяем, является ли пользователь админом
+  const isAdmin = (userId: number) => {
+    return userId === 7791568803 || userId === 249835432;
+  };
+
   useEffect(() => {
-    // Инициализация Telegram WebApp
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
-      
-      const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
-      if (telegramUser) {
-        setUser(telegramUser);
-        console.log('Telegram пользователь:', telegramUser);
-        console.log('Start param:', window.Telegram.WebApp.initDataUnsafe?.start_param);
-        
-        // Инициализируем реферальную систему
-        initializeReferralSystem(telegramUser.id);
-        
-        // Проверяем существующего пользователя
-        checkExistingUser(telegramUser.id);
+    const initializeApp = async () => {
+      try {
+        // Инициализация Telegram WebApp
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+          
+          const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+          if (telegramUser) {
+            setUser(telegramUser);
+            console.log('Telegram пользователь:', telegramUser);
+            console.log('Start param:', window.Telegram.WebApp.initDataUnsafe?.start_param);
+            
+            // Инициализируем реферальную систему
+            await initializeReferralSystem(telegramUser.id);
+            
+            // Проверяем существующего пользователя
+            await checkExistingUser(telegramUser.id);
+          } else {
+            // Если пользователь не найден в Telegram WebApp, используем тестовые данные
+            const testUser = {
+              id: 123456789,
+              first_name: "Тестовый",
+              last_name: "Пользователь",
+              username: "testuser"
+            };
+            setUser(testUser);
+            await checkExistingUser(testUser.id);
+          }
+        } else {
+          // Для тестирования без Telegram WebApp
+          console.log('Telegram WebApp не обнаружен, используем тестовые данные');
+          const testUser = {
+            id: 123456789,
+            first_name: "Тестовый",
+            last_name: "Пользователь",
+            username: "testuser"
+          };
+          setUser(testUser);
+          await checkExistingUser(testUser.id);
+        }
+      } catch (err) {
+        console.error('Ошибка инициализации приложения:', err);
+        toast.error('Ошибка при загрузке приложения');
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      // Для тестирования без Telegram WebApp
-      console.log('Telegram WebApp не обнаружен, используем тестовые данные');
-      const testUser = {
-        id: 123456789,
-        first_name: "Тестовый",
-        last_name: "Пользователь",
-        username: "testuser"
-      };
-      setUser(testUser);
-      checkExistingUser(testUser.id);
-    }
+    };
+
+    initializeApp();
   }, []);
 
   const checkExistingUser = async (userId: number) => {
     try {
-      setIsLoading(true);
-      
       // Проверяем существует ли пользователь в базе
       const { data: existingUser } = await supabase
         .from('telegram_users')
@@ -77,8 +101,6 @@ const Index = () => {
       console.error('Ошибка проверки пользователя:', err);
       // В случае ошибки загружаем профиль как обычно
       await loadTelegramProfile(userId);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -125,6 +147,11 @@ const Index = () => {
     navigate('/cards');
   };
 
+  const handleAdminAccess = () => {
+    // Переход в админ-панель
+    navigate('/admin');
+  };
+
   if (error) {
     console.error('Ошибка:', error);
   }
@@ -158,6 +185,22 @@ const Index = () => {
             {user ? `Добро пожаловать, ${user.first_name}!` : "Управляйте бонусами и NFT"}
           </p>
         </div>
+
+        {/* Admin Panel Button */}
+        {user && isAdmin(user.id) && (
+          <Card className="glass-card mb-6 p-4 animate-fade-in">
+            <div className="text-center">
+              <h3 className="font-semibold mb-3 text-orange-400">Админ доступ</h3>
+              <Button 
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                onClick={handleAdminAccess}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Открыть админ панель
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* User Profile Info */}
         {(user || telegramProfile) && (
