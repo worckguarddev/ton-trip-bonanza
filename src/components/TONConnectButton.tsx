@@ -108,7 +108,7 @@ const TONConnectWrapper = ({ userId }: TONConnectWrapperProps) => {
         </div>
         <h3 className="font-semibold mb-2">Подключите TON кошелёк</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Для вывода бонусных карт на блокчейн и сдачи в аренду необходимо подключить кошелёк
+          Подключение необходимо для работы с блокчейном и получения дополнительных возможностей
         </p>
         <TonConnectButton className="w-full" />
       </div>

@@ -133,6 +133,8 @@ export type Database = {
           telegram_id: number
           updated_at: string
           username: string | null
+          wallet_address: string | null
+          wallet_chain: string | null
         }
         Insert: {
           bio?: string | null
@@ -149,6 +151,8 @@ export type Database = {
           telegram_id: number
           updated_at?: string
           username?: string | null
+          wallet_address?: string | null
+          wallet_chain?: string | null
         }
         Update: {
           bio?: string | null
@@ -165,6 +169,8 @@ export type Database = {
           telegram_id?: number
           updated_at?: string
           username?: string | null
+          wallet_address?: string | null
+          wallet_chain?: string | null
         }
         Relationships: []
       }
