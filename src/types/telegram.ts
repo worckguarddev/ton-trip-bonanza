@@ -8,6 +8,11 @@ export interface TelegramUser {
   language_code?: string;
 }
 
+export interface TelegramInitDataUnsafe {
+  user?: TelegramUser;
+  start_param?: string;
+}
+
 export interface TelegramWebApp {
   ready: () => void;
   expand: () => void;
@@ -16,10 +21,7 @@ export interface TelegramWebApp {
     show: () => void;
     hide: () => void;
   };
-  initDataUnsafe: {
-    user?: TelegramUser;
-    start_param?: string; // Добавляем поддержку start_param
-  };
+  initDataUnsafe: TelegramInitDataUnsafe;
 }
 
 declare global {
