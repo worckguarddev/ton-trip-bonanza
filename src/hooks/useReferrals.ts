@@ -114,12 +114,19 @@ export const useReferrals = () => {
 
       if (error) throw error;
       
+      // Получаем текущий баланс реферера
+      const { data: currentBalance } = await supabase
+        .from('user_balances')
+        .select('bonus_points, total_earned')
+        .eq('user_telegram_id', referrerTelegramId)
+        .single();
+
       // Начисляем бонус рефереру
       const { error: bonusError } = await supabase
         .from('user_balances')
         .update({
-          bonus_points: supabase.sql`COALESCE(bonus_points, 0) + 100`,
-          total_earned: supabase.sql`COALESCE(total_earned, 0) + 100`
+          bonus_points: (currentBalance?.bonus_points || 0) + 100,
+          total_earned: (currentBalance?.total_earned || 0) + 100
         })
         .eq('user_telegram_id', referrerTelegramId);
 

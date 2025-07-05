@@ -60,16 +60,16 @@ const Cards = () => {
     }
 
     // Проверяем баланс
-    if (!balance || balance.bonus_points < card.price) {
-      toast.error('Недостаточно бонусов для покупки');
+    if (!balance || (balance.rub_balance || 0) < card.price) {
+      toast.error('Недостаточно рублей для покупки');
       return;
     }
 
-    const success = await purchaseCard(id, user.id);
+    const success = await purchaseCard(id, user.id, card.price);
     if (success) {
       // Обновляем баланс после покупки
       await updateBalance(user.id, {
-        bonus_points: balance.bonus_points - card.price,
+        rub_balance: (balance.rub_balance || 0) - card.price,
         total_spent: (balance.total_spent || 0) + card.price
       });
 
@@ -129,7 +129,7 @@ const Cards = () => {
             <div>
               <h1 className="text-2xl font-bold gradient-text">Бонусные карты</h1>
               <p className="text-xs text-muted-foreground">
-                Баланс: {balance?.bonus_points || 0} бонусов
+                Баланс: {balance?.rub_balance || 0} рублей
               </p>
             </div>
           </div>

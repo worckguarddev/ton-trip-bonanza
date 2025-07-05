@@ -107,10 +107,10 @@ export const useCards = () => {
     try {
       setLoading(true);
       
-      // Проверяем баланс пользователя
+      // Проверяем баланс пользователя - получаем все поля
       const { data: balanceData, error: balanceError } = await supabase
         .from('user_balances')
-        .select('rub_balance')
+        .select('rub_balance, total_spent')
         .eq('user_telegram_id', telegramId)
         .single();
 
