@@ -4,41 +4,19 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Wallet, User, CheckCircle, AlertCircle } from "lucide-react";
 import { useTelegramProfile } from "@/hooks/useTelegramProfile";
+import { useReferralSystem } from "@/hooks/useReferralSystem";
+import { TelegramUser } from "@/types/telegram";
 import { toast } from "sonner";
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        ready: () => void;
-        expand: () => void;
-        MainButton: {
-          text: string;
-          show: () => void;
-          hide: () => void;
-        };
-        initDataUnsafe: {
-          user?: {
-            id: number;
-            first_name: string;
-            last_name?: string;
-            username?: string;
-            language_code?: string;
-          };
-        };
-      };
-    };
-  }
-}
-
 const Index = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<TelegramUser | null>(null);
   const [telegramProfile, setTelegramProfile] = useState<any>(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [subscriptionChecked, setSubscriptionChecked] = useState(false);
   const navigate = useNavigate();
   
   const { getTelegramProfile, checkSubscription, loading, error } = useTelegramProfile();
+  const { initializeReferralSystem } = useReferralSystem();
 
   useEffect(() => {
     // Инициализация Telegram WebApp
@@ -50,6 +28,10 @@ const Index = () => {
       if (telegramUser) {
         setUser(telegramUser);
         console.log('Telegram пользователь:', telegramUser);
+        console.log('Start param:', window.Telegram.WebApp.initDataUnsafe?.start_param);
+        
+        // Инициализируем реферальную систему
+        initializeReferralSystem(telegramUser.id);
         
         // Получаем расширенную информацию о пользователе
         loadTelegramProfile(telegramUser.id);
