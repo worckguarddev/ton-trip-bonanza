@@ -65,17 +65,25 @@ const Cards = () => {
       return;
     }
 
+    console.log('Покупка карты:', { cardId: id, userId: user.id, cardPrice: card.price, currentBalance: balance.rub_balance });
+
     const success = await purchaseCard(id, user.id, card.price);
     if (success) {
+      console.log('Покупка успешна, обновляем баланс');
+      
       // Обновляем баланс после покупки
+      const newBalance = (balance.rub_balance || 0) - card.price;
+      const newTotalSpent = (balance.total_spent || 0) + card.price;
+      
       await updateBalance(user.id, {
-        rub_balance: (balance.rub_balance || 0) - card.price,
-        total_spent: (balance.total_spent || 0) + card.price
+        rub_balance: newBalance,
+        total_spent: newTotalSpent
       });
 
       // Обрабатываем реферальный бонус
       await processReferralBonus(user.id, card.price);
 
+      // Обновляем данные
       await fetchUserCards(user.id);
       await fetchBalance(user.id);
     }
