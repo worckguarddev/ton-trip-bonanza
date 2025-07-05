@@ -9,7 +9,7 @@ interface AdminCard {
   description: string | null;
   image_url: string | null;
   price: number;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  rarity: string; // Изменили на string вместо строгого типа
   is_available: boolean | null;
   benefits: any;
   created_at: string;
@@ -278,7 +278,7 @@ export const useAdmin = () => {
           )
         `)
         .eq('is_withdrawn', true)
-        .is('blockchain_address', null, { negate: true });
+        .not('blockchain_address', 'is', null);
 
       if (error) throw error;
 
