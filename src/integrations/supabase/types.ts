@@ -48,6 +48,33 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_links: {
+        Row: {
+          created_at: string
+          id: string
+          processed: boolean
+          referred_telegram_id: number
+          referrer_telegram_id: number
+          start_param: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          processed?: boolean
+          referred_telegram_id: number
+          referrer_telegram_id: number
+          start_param: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          processed?: boolean
+          referred_telegram_id?: number
+          referrer_telegram_id?: number
+          start_param?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           bonus_amount: number | null
@@ -100,6 +127,8 @@ export type Database = {
           language_code: string | null
           last_name: string | null
           photo_url: string | null
+          referrer_id: number | null
+          start_param: string | null
           subscription_checked_at: string | null
           telegram_id: number
           updated_at: string
@@ -114,6 +143,8 @@ export type Database = {
           language_code?: string | null
           last_name?: string | null
           photo_url?: string | null
+          referrer_id?: number | null
+          start_param?: string | null
           subscription_checked_at?: string | null
           telegram_id: number
           updated_at?: string
@@ -128,6 +159,8 @@ export type Database = {
           language_code?: string | null
           last_name?: string | null
           photo_url?: string | null
+          referrer_id?: number | null
+          start_param?: string | null
           subscription_checked_at?: string | null
           telegram_id?: number
           updated_at?: string
@@ -285,7 +318,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      process_referral_bonus: {
+        Args: { referrer_id: number; purchase_amount: number }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

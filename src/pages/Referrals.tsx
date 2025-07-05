@@ -1,39 +1,51 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Share, QrCode, Copy, Gift } from "lucide-react";
 import { toast } from "sonner";
+import { useReferrals } from "@/hooks/useReferrals";
+import { useBalance } from "@/hooks/useBalance";
+import { useReferralSystem } from "@/hooks/useReferralSystem";
+import { TelegramUser } from "@/types/telegram";
 
 const Referrals = () => {
   const [showQR, setShowQR] = useState(false);
-  
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const { referrals, fetchReferrals } = useReferrals();
+  const { balance, fetchBalance } = useBalance();
+  const { generateReferralLink } = useReferralSystem();
+
+  useEffect(() => {
+    const initializeUser = async () => {
+      if (window.Telegram?.WebApp) {
+        const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (telegramUser) {
+          setUser(telegramUser);
+          await fetchReferrals(telegramUser.id);
+          await fetchBalance(telegramUser.id);
+        }
+      } else {
+        // Тестовые данные
+        const testUser = { id: 123456789, first_name: "Test", last_name: "User" };
+        setUser(testUser);
+        await fetchReferrals(testUser.id);
+        await fetchBalance(testUser.id);
+      }
+    };
+
+    initializeUser();
+  }, []);
+
   const referralStats = {
-    totalReferrals: 5,
-    totalEarned: 150,
-    pendingRewards: 80
+    totalReferrals: referrals.filter(r => r.status === 'active').length,
+    totalEarned: referrals.reduce((sum, r) => sum + (r.bonus_amount || 0), 0),
+    pendingRewards: referrals.filter(r => r.status === 'pending').reduce((sum, r) => sum + (r.bonus_amount || 0), 0)
   };
 
-  const referralLink = "https://t.me/TonTripBonanzaBot?ref=123456";
-
-  const referralHistory = [
-    {
-      id: 1,
-      username: "user123",
-      joinDate: "2024-01-10",
-      reward: 30,
-      status: "active"
-    },
-    {
-      id: 2,
-      username: "crypto_lover",
-      joinDate: "2024-01-08",
-      reward: 50,
-      status: "active"
-    }
-  ];
+  const referralLink = user ? generateReferralLink(user.id) : "";
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -43,6 +55,23 @@ const Referrals = () => {
   const generateQR = () => {
     setShowQR(true);
     toast.success("QR-код создан!");
+  };
+
+  const shareReferralLink = async () => {
+    if (navigator.share && referralLink) {
+      try {
+        await navigator.share({
+          title: 'Присоединяйтесь к TonTrip Bonanza!',
+          text: 'Получайте бонусы за поездки и покупки NFT карт',
+          url: referralLink,
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+        copyToClipboard(referralLink);
+      }
+    } else {
+      copyToClipboard(referralLink);
+    }
   };
 
   return (
@@ -71,15 +100,15 @@ const Referrals = () => {
           </Card>
           <Card className="glass-card p-3 text-center">
             <div className="text-2xl font-bold text-green-400 mb-1">
-              {referralStats.totalEarned}
+              {Math.round(referralStats.totalEarned)}
             </div>
-            <div className="text-xs text-muted-foreground">₽ заработано</div>
+            <div className="text-xs text-muted-foreground">бонусов заработано</div>
           </Card>
           <Card className="glass-card p-3 text-center">
             <div className="text-2xl font-bold text-yellow-400 mb-1">
-              {referralStats.pendingRewards}
+              {Math.round(referralStats.pendingRewards)}
             </div>
-            <div className="text-xs text-muted-foreground">₽ в ожидании</div>
+            <div className="text-xs text-muted-foreground">в ожидании</div>
           </Card>
         </div>
 
@@ -105,6 +134,14 @@ const Referrals = () => {
             <Button 
               variant="outline" 
               className="flex-1"
+              onClick={shareReferralLink}
+            >
+              <Share className="w-4 h-4 mr-2" />
+              Поделиться
+            </Button>
+            <Button 
+              variant="outline" 
+              className="flex-1"
               onClick={() => copyToClipboard(referralLink)}
             >
               <Copy className="w-4 h-4 mr-2" />
@@ -112,11 +149,9 @@ const Referrals = () => {
             </Button>
             <Button 
               variant="outline" 
-              className="flex-1"
               onClick={generateQR}
             >
-              <QrCode className="w-4 h-4 mr-2" />
-              QR-код
+              <QrCode className="w-4 h-4" />
             </Button>
           </div>
         </Card>
@@ -142,9 +177,9 @@ const Referrals = () => {
           </div>
           <div className="space-y-2 text-sm text-muted-foreground">
             <p>• Получайте 3% с каждой покупки рефералом</p>
-            <p>• Минимальная сумма для вывода: 100 ₽</p>
-            <p>• Вывод доступен через 1 год после получения</p>
-            <p>• Необходимо иметь бонусные и партнерские карты</p>
+            <p>• Бонусы начисляются автоматически</p>
+            <p>• Ссылка формата: t.me/bot?startapp=ref_ВашID</p>
+            <p>• Один пользователь может быть приглашен только один раз</p>
           </div>
         </Card>
 
@@ -152,25 +187,31 @@ const Referrals = () => {
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-4">История рефералов</h2>
           <div className="space-y-3">
-            {referralHistory.map((referral) => (
-              <Card key={referral.id} className="glass-card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-green-400" />
-                    <span className="text-sm font-medium">@{referral.username}</span>
+            {referrals.length > 0 ? (
+              referrals.map((referral) => (
+                <Card key={referral.id} className="glass-card p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-green-400" />
+                      <span className="text-sm font-medium">ID: {referral.referred_telegram_id}</span>
+                    </div>
+                    <Badge className="bg-green-500 text-white">
+                      +{Math.round(referral.bonus_amount || 0)} бонусов
+                    </Badge>
                   </div>
-                  <Badge className="bg-green-500 text-white">
-                    +{referral.reward} ₽
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Присоединился: {new Date(referral.joinDate).toLocaleDateString('ru-RU')}</span>
-                  <Badge variant={referral.status === 'active' ? 'default' : 'secondary'}>
-                    {referral.status === 'active' ? 'Активен' : 'Неактивен'}
-                  </Badge>
-                </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Присоединился: {new Date(referral.created_at).toLocaleDateString('ru-RU')}</span>
+                    <Badge variant={referral.status === 'active' ? 'default' : 'secondary'}>
+                      {referral.status === 'active' ? 'Активен' : referral.status === 'pending' ? 'Ожидание' : 'Неактивен'}
+                    </Badge>
+                  </div>
+                </Card>
+              ))
+            ) : (
+              <Card className="glass-card p-6 text-center">
+                <p className="text-muted-foreground">У вас пока нет рефералов</p>
               </Card>
-            ))}
+            )}
           </div>
         </div>
       </div>

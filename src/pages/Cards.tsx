@@ -9,33 +9,41 @@ import { Gift } from "lucide-react";
 import { toast } from "sonner";
 import { useCards } from "@/hooks/useCards";
 import { useBalance } from "@/hooks/useBalance";
-import { useReferrals } from "@/hooks/useReferrals";
+import { useReferralSystem } from "@/hooks/useReferralSystem";
 import { TelegramUser } from "@/types/telegram";
 
 const Cards = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const { availableCards, userCards, loading, fetchAvailableCards, fetchUserCards, purchaseCard, rentCard, withdrawCard } = useCards();
   const { balance, fetchBalance, updateBalance } = useBalance();
-  const { createReferral } = useReferrals();
+  const { processReferralBonus, initializeReferralSystem } = useReferralSystem();
 
   useEffect(() => {
-    // Получаем пользователя из Telegram WebApp
-    if (window.Telegram?.WebApp) {
-      const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
-      if (telegramUser) {
-        setUser(telegramUser);
-        fetchUserCards(telegramUser.id);
-        fetchBalance(telegramUser.id);
+    const initializeUser = async () => {
+      // Получаем пользователя из Telegram WebApp
+      if (window.Telegram?.WebApp) {
+        const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (telegramUser) {
+          setUser(telegramUser);
+          
+          // Инициализируем реферальную систему
+          await initializeReferralSystem(telegramUser.id);
+          
+          await fetchUserCards(telegramUser.id);
+          await fetchBalance(telegramUser.id);
+        }
+      } else {
+        // Тестовые данные
+        const testUser = { id: 123456789, first_name: "Test", last_name: "User" };
+        setUser(testUser);
+        await fetchUserCards(testUser.id);
+        await fetchBalance(testUser.id);
       }
-    } else {
-      // Тестовые данные
-      const testUser = { id: 123456789, first_name: "Test", last_name: "User" };
-      setUser(testUser);
-      fetchUserCards(testUser.id);
-      fetchBalance(testUser.id);
-    }
 
-    fetchAvailableCards();
+      await fetchAvailableCards();
+    };
+
+    initializeUser();
   }, []);
 
   const handlePurchase = async (id: string) => {
@@ -65,32 +73,11 @@ const Cards = () => {
         total_spent: (balance.total_spent || 0) + card.price
       });
 
-      // Проверяем и начисляем реферальный бонус
+      // Обрабатываем реферальный бонус
       await processReferralBonus(user.id, card.price);
 
       await fetchUserCards(user.id);
       await fetchBalance(user.id);
-    }
-  };
-
-  const processReferralBonus = async (userId: number, purchaseAmount: number) => {
-    try {
-      // Здесь должна быть логика поиска реферера из параметров запуска бота
-      // Для демонстрации используем фиксированный ID
-      const referrerId = 987654321; // В реальности получаем из start параметра
-      
-      if (referrerId && referrerId !== userId) {
-        const bonusAmount = purchaseAmount * 0.03; // 3% от покупки
-        
-        // Создаем запись о реферале если её нет
-        await createReferral(referrerId, userId);
-        
-        // Начисляем бонус рефереру
-        // Здесь нужно обновить баланс реферера
-        console.log(`Начислен реферальный бонус ${bonusAmount} пользователю ${referrerId}`);
-      }
-    } catch (error) {
-      console.error('Ошибка обработки реферального бонуса:', error);
     }
   };
 

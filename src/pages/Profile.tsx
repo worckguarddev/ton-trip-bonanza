@@ -11,6 +11,7 @@ import { useTelegramProfile } from "@/hooks/useTelegramProfile";
 import { useBalance } from "@/hooks/useBalance";
 import { useCards } from "@/hooks/useCards";
 import { useReferrals } from "@/hooks/useReferrals";
+import { useReferralSystem } from "@/hooks/useReferralSystem";
 import { TelegramUser } from "@/types/telegram";
 
 const Profile = () => {
@@ -19,7 +20,8 @@ const Profile = () => {
   const { getTelegramProfile } = useTelegramProfile();
   const { balance, fetchBalance } = useBalance();
   const { userCards, fetchUserCards } = useCards();
-  const { referrals, fetchReferrals, generateReferralLink } = useReferrals();
+  const { referrals, fetchReferrals } = useReferrals();
+  const { generateReferralLink } = useReferralSystem();
 
   useEffect(() => {
     const initializeProfile = async () => {
@@ -65,25 +67,25 @@ const Profile = () => {
       id: 1,
       type: "purchase",
       description: "Покупка NFT карты",
-      amount: -100,
-      date: "2024-01-15"
+      amount: -(balance?.total_spent || 0),
+      date: new Date().toISOString()
     },
     {
       id: 2,
       type: "referral",
-      description: "Бонус за реферала",
-      amount: +30,
-      date: "2024-01-14"
+      description: "Бонус за рефералов",
+      amount: +referrals.reduce((sum, r) => sum + (r.bonus_amount || 0), 0),
+      date: new Date().toISOString()
     },
     {
       id: 3,
       type: "bonus",
       description: "Начисление бонусов",
       amount: +(balance?.bonus_points || 0),
-      date: "2024-01-13",
+      date: new Date().toISOString(),
       currency: "бонусов"
     }
-  ];
+  ].filter(t => t.amount !== 0);
 
   if (!user) {
     return (
@@ -173,11 +175,11 @@ const Profile = () => {
               <div className="text-xs text-muted-foreground">Карт в коллекции</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{userStats.totalEarned}</div>
+              <div className="text-2xl font-bold text-green-400">{Math.round(userStats.totalEarned)}</div>
               <div className="text-xs text-muted-foreground">бонусов заработано</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-400">{userStats.totalSpent}</div>
+              <div className="text-2xl font-bold text-red-400">{Math.round(userStats.totalSpent)}</div>
               <div className="text-xs text-muted-foreground">бонусов потрачено</div>
             </div>
             <div className="text-center">
@@ -211,35 +213,37 @@ const Profile = () => {
         </div>
 
         {/* Recent Transactions */}
-        <Card className="glass-card p-4 mb-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <History className="w-5 h-5" />
-            Последние операции
-          </h3>
-          <div className="space-y-3">
-            {recentTransactions.map((transaction, index) => (
-              <div key={transaction.id}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">{transaction.description}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(transaction.date).toLocaleDateString('ru-RU')}
-                    </p>
+        {recentTransactions.length > 0 && (
+          <Card className="glass-card p-4 mb-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <History className="w-5 h-5" />
+              Последние операции
+            </h3>
+            <div className="space-y-3">
+              {recentTransactions.map((transaction, index) => (
+                <div key={transaction.id}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">{transaction.description}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(transaction.date).toLocaleDateString('ru-RU')}
+                      </p>
+                    </div>
+                    <div className={`text-right ${transaction.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <span className="font-bold">
+                        {transaction.amount > 0 ? '+' : ''}{Math.round(transaction.amount)}
+                      </span>
+                      <span className="text-xs ml-1">
+                        {transaction.currency || 'бонусов'}
+                      </span>
+                    </div>
                   </div>
-                  <div className={`text-right ${transaction.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    <span className="font-bold">
-                      {transaction.amount > 0 ? '+' : ''}{transaction.amount}
-                    </span>
-                    <span className="text-xs ml-1">
-                      {transaction.currency || 'бонусов'}
-                    </span>
-                  </div>
+                  {index < recentTransactions.length - 1 && <Separator className="mt-3" />}
                 </div>
-                {index < recentTransactions.length - 1 && <Separator className="mt-3" />}
-              </div>
-            ))}
-          </div>
-        </Card>
+              ))}
+            </div>
+          </Card>
+        )}
       </div>
 
       <Navigation />
