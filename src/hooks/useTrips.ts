@@ -33,7 +33,14 @@ export const useTrips = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTrips(data || []);
+      
+      // Safely cast the status type
+      const typedData = (data || []).map(trip => ({
+        ...trip,
+        status: trip.status as 'planned' | 'active' | 'completed' | 'cancelled'
+      }));
+      
+      setTrips(typedData);
     } catch (err) {
       console.error('Error fetching trips:', err);
       setError(err instanceof Error ? err.message : 'Ошибка загрузки поездок');

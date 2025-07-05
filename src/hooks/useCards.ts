@@ -38,7 +38,14 @@ export const useCards = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setAvailableCards(data || []);
+      
+      // Safely cast the rarity type
+      const typedData = (data || []).map(card => ({
+        ...card,
+        rarity: card.rarity as 'common' | 'rare' | 'epic' | 'legendary'
+      }));
+      
+      setAvailableCards(typedData);
     } catch (err) {
       console.error('Error fetching available cards:', err);
       setError(err instanceof Error ? err.message : 'Ошибка загрузки карт');
@@ -72,7 +79,7 @@ export const useCards = () => {
 
       if (error) throw error;
       
-      const transformedData = data?.map(item => ({
+      const transformedData = (data || []).map(item => ({
         user_card_id: item.id,
         purchased_at: item.purchased_at,
         is_rented: item.is_rented,
@@ -83,10 +90,10 @@ export const useCards = () => {
         description: item.bonus_cards.description,
         image_url: item.bonus_cards.image_url,
         price: item.bonus_cards.price,
-        rarity: item.bonus_cards.rarity,
+        rarity: item.bonus_cards.rarity as 'common' | 'rare' | 'epic' | 'legendary',
         is_available: true,
         benefits: item.bonus_cards.benefits
-      })) || [];
+      }));
 
       setUserCards(transformedData);
     } catch (err) {

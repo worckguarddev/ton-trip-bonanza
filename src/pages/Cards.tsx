@@ -8,23 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift } from "lucide-react";
 import { toast } from "sonner";
 import { useCards } from "@/hooks/useCards";
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        initDataUnsafe: {
-          user?: {
-            id: number;
-          };
-        };
-      };
-    };
-  }
-}
+import { TelegramUser } from "@/types/telegram";
 
 const Cards = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<TelegramUser | null>(null);
   const { availableCards, userCards, loading, fetchAvailableCards, fetchUserCards, purchaseCard, rentCard, withdrawCard } = useCards();
 
   useEffect(() => {

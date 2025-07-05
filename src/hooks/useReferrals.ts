@@ -27,7 +27,14 @@ export const useReferrals = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setReferrals(data || []);
+      
+      // Safely cast the status type
+      const typedData = (data || []).map(referral => ({
+        ...referral,
+        status: referral.status as 'pending' | 'active' | 'rewarded'
+      }));
+      
+      setReferrals(typedData);
     } catch (err) {
       console.error('Error fetching referrals:', err);
       setError(err instanceof Error ? err.message : 'Ошибка загрузки рефералов');

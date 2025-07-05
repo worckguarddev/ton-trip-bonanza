@@ -7,23 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Car, MapPin, Clock, ExternalLink, Plus } from "lucide-react";
 import { useTrips } from "@/hooks/useTrips";
 import { useBalance } from "@/hooks/useBalance";
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        initDataUnsafe: {
-          user?: {
-            id: number;
-          };
-        };
-      };
-    };
-  }
-}
+import { TelegramUser } from "@/types/telegram";
 
 const Trips = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<TelegramUser | null>(null);
   const { trips, loading: tripsLoading, fetchTrips } = useTrips();
   const { balance, loading: balanceLoading, fetchBalance } = useBalance();
 
