@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { TONConnectButton } from "@/components/TONConnectButton";
 import { BalanceCard } from "@/components/BalanceCard";
@@ -7,24 +7,57 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Phone, Calendar, Wallet, History, Car, DollarSign } from "lucide-react";
+import { useTelegramProfile } from "@/hooks/useTelegramProfile";
+import { useBalance } from "@/hooks/useBalance";
+import { useCards } from "@/hooks/useCards";
+import { useReferrals } from "@/hooks/useReferrals";
+import { TelegramUser } from "@/types/telegram";
 
 const Profile = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
-  
-  const userInfo = {
-    firstName: "Иван",
-    lastName: "Петров", 
-    username: "@ivan_petrov",
-    phone: "+7 (999) 123-45-67",
-    joinDate: "2024-01-01",
-    referralCode: "REF123456"
-  };
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const { getTelegramProfile } = useTelegramProfile();
+  const { balance, fetchBalance } = useBalance();
+  const { userCards, fetchUserCards } = useCards();
+  const { referrals, fetchReferrals, generateReferralLink } = useReferrals();
+
+  useEffect(() => {
+    const initializeProfile = async () => {
+      // Получаем пользователя из Telegram WebApp
+      if (window.Telegram?.WebApp) {
+        const telegramUser = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (telegramUser) {
+          setUser(telegramUser);
+          
+          // Получаем дополнительную информацию профиля
+          await getTelegramProfile(telegramUser.id);
+          await fetchBalance(telegramUser.id);
+          await fetchUserCards(telegramUser.id);
+          await fetchReferrals(telegramUser.id);
+        }
+      } else {
+        // Тестовые данные
+        const testUser = { 
+          id: 123456789, 
+          first_name: "Иван", 
+          last_name: "Петров",
+          username: "ivan_petrov"
+        };
+        setUser(testUser);
+        await fetchBalance(testUser.id);
+        await fetchUserCards(testUser.id);
+        await fetchReferrals(testUser.id);
+      }
+    };
+
+    initializeProfile();
+  }, []);
 
   const userStats = {
-    totalCards: 5,
-    totalEarned: 250,
-    totalSpent: 150,
-    referrals: 3
+    totalCards: userCards.length,
+    totalEarned: balance?.total_earned || 0,
+    totalSpent: balance?.total_spent || 0,
+    referrals: referrals.filter(r => r.status === 'active').length
   };
 
   const recentTransactions = [
@@ -46,11 +79,19 @@ const Profile = () => {
       id: 3,
       type: "bonus",
       description: "Начисление бонусов",
-      amount: +150,
+      amount: +(balance?.bonus_points || 0),
       date: "2024-01-13",
       currency: "бонусов"
     }
   ];
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white pb-20 flex items-center justify-center">
+        <p className="text-muted-foreground">Загрузка профиля...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-ton-dark to-black text-white pb-20">
@@ -75,23 +116,27 @@ const Profile = () => {
               <User className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold">{userInfo.firstName} {userInfo.lastName}</h2>
-              <p className="text-muted-foreground">{userInfo.username}</p>
+              <h2 className="text-xl font-bold">
+                {user.first_name} {user.last_name || ''}
+              </h2>
+              <p className="text-muted-foreground">
+                {user.username ? `@${user.username}` : `ID: ${user.id}`}
+              </p>
             </div>
           </div>
           
           <div className="space-y-3 text-sm">
             <div className="flex items-center gap-3">
               <Phone className="w-4 h-4 text-muted-foreground" />
-              <span>{userInfo.phone}</span>
+              <span>Telegram ID: {user.id}</span>
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span>В проекте с {new Date(userInfo.joinDate).toLocaleDateString('ru-RU')}</span>
+              <span>В проекте с {new Date().toLocaleDateString('ru-RU')}</span>
             </div>
             <div className="flex items-center gap-3">
               <span className="text-muted-foreground">Реферальный код:</span>
-              <Badge variant="outline">{userInfo.referralCode}</Badge>
+              <Badge variant="outline">REF{user.id}</Badge>
             </div>
           </div>
         </Card>
@@ -101,15 +146,15 @@ const Profile = () => {
           <div className="grid gap-4 mb-6">
             <BalanceCard 
               title="На поездки"
-              amount={1250}
+              amount={balance?.bonus_points || 0}
               currency="бонусов"
               icon={Car}
               gradient="from-blue-500 to-cyan-500"
             />
             <BalanceCard 
               title="Баланс"
-              amount={500}
-              currency="₽"
+              amount={balance?.ton_balance || 0}
+              currency="TON"
               icon={DollarSign}
               gradient="from-green-500 to-emerald-500"
             />
@@ -129,17 +174,30 @@ const Profile = () => {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-400">{userStats.totalEarned}</div>
-              <div className="text-xs text-muted-foreground">₽ заработано</div>
+              <div className="text-xs text-muted-foreground">бонусов заработано</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400">{userStats.totalSpent}</div>
-              <div className="text-xs text-muted-foreground">₽ потрачено</div>
+              <div className="text-xs text-muted-foreground">бонусов потрачено</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-400">{userStats.referrals}</div>
               <div className="text-xs text-muted-foreground">Рефералов</div>
             </div>
           </div>
+        </Card>
+
+        {/* Referral Link */}
+        <Card className="glass-card p-4 mb-6">
+          <h3 className="font-semibold mb-3">Реферальная ссылка</h3>
+          <div className="bg-black/20 rounded-lg p-3 mb-3">
+            <p className="text-xs font-mono break-all text-muted-foreground">
+              {generateReferralLink(user.id)}
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Получайте 3% с каждой покупки рефералом
+          </p>
         </Card>
 
         {/* TON Wallet */}
@@ -173,7 +231,7 @@ const Profile = () => {
                       {transaction.amount > 0 ? '+' : ''}{transaction.amount}
                     </span>
                     <span className="text-xs ml-1">
-                      {transaction.currency || '₽'}
+                      {transaction.currency || 'бонусов'}
                     </span>
                   </div>
                 </div>

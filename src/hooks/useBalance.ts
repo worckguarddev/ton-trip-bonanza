@@ -37,7 +37,7 @@ export const useBalance = () => {
           .insert({
             user_telegram_id: telegramId,
             ton_balance: 0,
-            bonus_points: 0,
+            bonus_points: 1000, // Стартовые бонусы
             total_earned: 0,
             total_spent: 0
           })

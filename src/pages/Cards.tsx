@@ -8,11 +8,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift } from "lucide-react";
 import { toast } from "sonner";
 import { useCards } from "@/hooks/useCards";
+import { useBalance } from "@/hooks/useBalance";
+import { useReferrals } from "@/hooks/useReferrals";
 import { TelegramUser } from "@/types/telegram";
 
 const Cards = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const { availableCards, userCards, loading, fetchAvailableCards, fetchUserCards, purchaseCard, rentCard, withdrawCard } = useCards();
+  const { balance, fetchBalance, updateBalance } = useBalance();
+  const { createReferral } = useReferrals();
 
   useEffect(() => {
     // Получаем пользователя из Telegram WebApp
@@ -21,12 +25,14 @@ const Cards = () => {
       if (telegramUser) {
         setUser(telegramUser);
         fetchUserCards(telegramUser.id);
+        fetchBalance(telegramUser.id);
       }
     } else {
       // Тестовые данные
-      const testUser = { id: 123456789 };
+      const testUser = { id: 123456789, first_name: "Test", last_name: "User" };
       setUser(testUser);
       fetchUserCards(testUser.id);
+      fetchBalance(testUser.id);
     }
 
     fetchAvailableCards();
@@ -38,9 +44,53 @@ const Cards = () => {
       return;
     }
 
+    // Находим карту для проверки цены
+    const card = availableCards.find(c => c.id === id);
+    if (!card) {
+      toast.error('Карта не найдена');
+      return;
+    }
+
+    // Проверяем баланс
+    if (!balance || balance.bonus_points < card.price) {
+      toast.error('Недостаточно бонусов для покупки');
+      return;
+    }
+
     const success = await purchaseCard(id, user.id);
     if (success) {
+      // Обновляем баланс после покупки
+      await updateBalance(user.id, {
+        bonus_points: balance.bonus_points - card.price,
+        total_spent: (balance.total_spent || 0) + card.price
+      });
+
+      // Проверяем и начисляем реферальный бонус
+      await processReferralBonus(user.id, card.price);
+
       await fetchUserCards(user.id);
+      await fetchBalance(user.id);
+    }
+  };
+
+  const processReferralBonus = async (userId: number, purchaseAmount: number) => {
+    try {
+      // Здесь должна быть логика поиска реферера из параметров запуска бота
+      // Для демонстрации используем фиксированный ID
+      const referrerId = 987654321; // В реальности получаем из start параметра
+      
+      if (referrerId && referrerId !== userId) {
+        const bonusAmount = purchaseAmount * 0.03; // 3% от покупки
+        
+        // Создаем запись о реферале если её нет
+        await createReferral(referrerId, userId);
+        
+        // Начисляем бонус рефереру
+        // Здесь нужно обновить баланс реферера
+        console.log(`Начислен реферальный бонус ${bonusAmount} пользователю ${referrerId}`);
+      }
+    } catch (error) {
+      console.error('Ошибка обработки реферального бонуса:', error);
     }
   };
 
@@ -91,7 +141,9 @@ const Cards = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold gradient-text">Бонусные карты</h1>
-              <p className="text-xs text-muted-foreground">Управляйте вашими картами</p>
+              <p className="text-xs text-muted-foreground">
+                Баланс: {balance?.bonus_points || 0} бонусов
+              </p>
             </div>
           </div>
         </div>

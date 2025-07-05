@@ -25,7 +25,7 @@ const Trips = () => {
       }
     } else {
       // Тестовые данные
-      const testUser = { id: 123456789 };
+      const testUser = { id: 123456789, first_name: "Test", last_name: "User" };
       setUser(testUser);
       fetchTrips(testUser.id);
       fetchBalance(testUser.id);
