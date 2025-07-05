@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, User, CheckCircle, AlertCircle } from "lucide-react";
 import { useTelegramProfile } from "@/hooks/useTelegramProfile";
 import { useReferralSystem } from "@/hooks/useReferralSystem";
+import { useBotSettings } from "@/hooks/useBotSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { TelegramUser } from "@/types/telegram";
 import { toast } from "sonner";
@@ -20,6 +21,7 @@ const Index = () => {
   
   const { getTelegramProfile, checkSubscription, loading, error } = useTelegramProfile();
   const { initializeReferralSystem } = useReferralSystem();
+  const { settings: botSettings } = useBotSettings();
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -131,7 +133,8 @@ const Index = () => {
           navigate('/cards');
         }, 1000);
       } else {
-        toast.error('Подписка не найдена. Пожалуйста, подпишитесь на канал TonTripBonanza.');
+        const channelName = botSettings?.channel_name || 'канал';
+        toast.error(`Подписка не найдена. Пожалуйста, подпишитесь на ${channelName}.`);
       }
     } catch (err) {
       console.error('Ошибка проверки подписки:', err);
@@ -142,6 +145,14 @@ const Index = () => {
   const handleDirectAccess = () => {
     // Прямой доступ без проверки подписки (для тестирования)
     navigate('/cards');
+  };
+
+  const getChannelUrl = () => {
+    return botSettings?.channel_url || 'https://t.me/TonTripBonanza';
+  };
+
+  const getChannelName = () => {
+    return botSettings?.channel_name || 'канал';
   };
 
   if (error) {
@@ -232,19 +243,19 @@ const Index = () => {
             </div>
             
             <p className="text-sm text-muted-foreground mb-4">
-              Для доступа ко всем функциям подпишитесь на канал TonTripBonanza
+              Для доступа ко всем функциям подпишитесь на {getChannelName()}
             </p>
             
             {subscriptionChecked && !isSubscribed && (
               <p className="text-sm text-red-400 mb-4">
-                Подписка на TonTripBonanza не найдена. Подпишитесь и попробуйте снова.
+                Подписка на {getChannelName()} не найдена. Подпишитесь и попробуйте снова.
               </p>
             )}
             
             <div className="flex gap-2">
               <Button 
                 className="flex-1 bg-telegram-blue hover:bg-telegram-blue/80"
-                onClick={() => window.open('https://t.me/TonTripBonanza', '_blank')}
+                onClick={() => window.open(getChannelUrl(), '_blank')}
               >
                 Подписаться
               </Button>

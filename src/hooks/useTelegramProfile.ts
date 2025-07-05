@@ -70,12 +70,26 @@ export const useTelegramProfile = () => {
     setError(null);
 
     try {
-      console.log(`Проверка подписки пользователя ${userId} на канал TonTripBonanza`);
+      console.log(`Проверка подписки пользователя ${userId}`);
+
+      // Получаем настройки канала из базы данных
+      const { data: botSettings } = await supabase
+        .from('bot_settings')
+        .select('channel_id, channel_name')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const channelId = botSettings?.channel_id || '@TonTripBonanza';
+      const channelName = botSettings?.channel_name || 'TonTripBonanza';
+
+      console.log(`Проверка подписки на канал: ${channelName} (${channelId})`);
 
       const { data, error: functionError } = await supabase.functions.invoke('telegram-profile', {
         body: {
           userId,
-          action: 'checkSubscription'
+          action: 'checkSubscription',
+          channelId
         }
       });
 

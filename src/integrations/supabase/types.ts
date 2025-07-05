@@ -48,6 +48,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bot_settings: {
+        Row: {
+          bot_token: string | null
+          channel_id: string | null
+          channel_name: string | null
+          channel_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          bot_token?: string | null
+          channel_id?: string | null
+          channel_name?: string | null
+          channel_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          bot_token?: string | null
+          channel_id?: string | null
+          channel_name?: string | null
+          channel_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       referral_links: {
         Row: {
           created_at: string
