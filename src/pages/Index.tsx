@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Wallet, User, CheckCircle, AlertCircle, Settings } from "lucide-react";
+import { Wallet, User, CheckCircle, AlertCircle } from "lucide-react";
 import { useTelegramProfile } from "@/hooks/useTelegramProfile";
 import { useReferralSystem } from "@/hooks/useReferralSystem";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,11 +20,6 @@ const Index = () => {
   
   const { getTelegramProfile, checkSubscription, loading, error } = useTelegramProfile();
   const { initializeReferralSystem } = useReferralSystem();
-
-  // Проверяем, является ли пользователь админом
-  const isAdmin = (userId: number) => {
-    return userId === 7791568803 || userId === 249835432;
-  };
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -131,8 +126,10 @@ const Index = () => {
       
       if (subscribed) {
         toast.success('Подписка подтверждена!');
-        // Перенаправляем на страницу с бонусными картами
-        navigate('/cards');
+        // Небольшая задержка перед перенаправлением для показа сообщения
+        setTimeout(() => {
+          navigate('/cards');
+        }, 1000);
       } else {
         toast.error('Подписка не найдена. Пожалуйста, подпишитесь на канал TonTripBonanza.');
       }
@@ -145,11 +142,6 @@ const Index = () => {
   const handleDirectAccess = () => {
     // Прямой доступ без проверки подписки (для тестирования)
     navigate('/cards');
-  };
-
-  const handleAdminAccess = () => {
-    // Переход в админ-панель
-    navigate('/admin');
   };
 
   if (error) {
@@ -185,22 +177,6 @@ const Index = () => {
             {user ? `Добро пожаловать, ${user.first_name}!` : "Управляйте бонусами и NFT"}
           </p>
         </div>
-
-        {/* Admin Panel Button */}
-        {user && isAdmin(user.id) && (
-          <Card className="glass-card mb-6 p-4 animate-fade-in">
-            <div className="text-center">
-              <h3 className="font-semibold mb-3 text-orange-400">Админ доступ</h3>
-              <Button 
-                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                onClick={handleAdminAccess}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Открыть админ панель
-              </Button>
-            </div>
-          </Card>
-        )}
 
         {/* User Profile Info */}
         {(user || telegramProfile) && (

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { NFTCard } from "@/components/NFTCard";
@@ -8,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gift, Wallet } from "lucide-react";
+import { Gift, Wallet, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { useCards } from "@/hooks/useCards";
 import { useBalance } from "@/hooks/useBalance";
@@ -16,6 +15,7 @@ import { useReferralSystem } from "@/hooks/useReferralSystem";
 import { supabase } from "@/integrations/supabase/client";
 import { TelegramUser } from "@/types/telegram";
 import { useTonWallet } from "@tonconnect/ui-react";
+import { useNavigate } from "react-router-dom";
 
 const Cards = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -30,6 +30,12 @@ const Cards = () => {
   const { balance, fetchBalance } = useBalance();
   const { processReferralBonus, initializeReferralSystem } = useReferralSystem();
   const wallet = useTonWallet();
+  const navigate = useNavigate();
+
+  // Проверяем, является ли пользователь админом
+  const isAdmin = (userId: number) => {
+    return userId === 7791568803 || userId === 249835432;
+  };
 
   // Обновляем состояние кошелька при изменении подключения
   useEffect(() => {
@@ -86,6 +92,11 @@ const Cards = () => {
 
     initializeUser();
   }, [wallet]); // Добавляем wallet в зависимости
+
+  const handleAdminAccess = () => {
+    // Переход в админ-панель
+    navigate('/admin');
+  };
 
   const handlePurchase = async (id: string) => {
     if (!user?.id) {
@@ -211,6 +222,22 @@ const Cards = () => {
             </div>
           </div>
         </div>
+
+        {/* Admin Panel Button */}
+        {user && isAdmin(user.id) && (
+          <Card className="glass-card mb-6 p-4 animate-fade-in">
+            <div className="text-center">
+              <h3 className="font-semibold mb-3 text-orange-400">Админ доступ</h3>
+              <Button 
+                className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                onClick={handleAdminAccess}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Открыть админ панель
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Cards Tabs */}
         <Tabs defaultValue="available" className="mb-6">
