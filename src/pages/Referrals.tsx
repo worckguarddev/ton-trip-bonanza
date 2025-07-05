@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Share, QrCode, Copy, Gift } from "lucide-react";
+import { Users, Copy, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { useReferrals } from "@/hooks/useReferrals";
 import { useBalance } from "@/hooks/useBalance";
@@ -12,7 +13,6 @@ import { QRGenerator } from "@/components/QRGenerator";
 import { TelegramUser } from "@/types/telegram";
 
 const Referrals = () => {
-  const [showQR, setShowQR] = useState(false);
   const [user, setUser] = useState<TelegramUser | null>(null);
   const { referrals, fetchReferrals } = useReferrals();
   const { balance, fetchBalance } = useBalance();
@@ -50,13 +50,6 @@ const Referrals = () => {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Ссылка скопирована!");
-  };
-
-  const getQRCode = () => {
-    setShowQR(!showQR);
-    if (!showQR) {
-      toast.success("QR-код создан!");
-    }
   };
 
   return (
@@ -97,11 +90,11 @@ const Referrals = () => {
           </Card>
         </div>
 
-        {/* Referral Link */}
+        {/* Referral Link with QR */}
         <Card className="glass-card p-4 mb-6 animate-fade-in">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-              <Share className="w-6 h-6 text-white" />
+              <Users className="w-6 h-6 text-white" />
             </div>
             <div>
               <h3 className="font-semibold">Ваша реферальная ссылка</h3>
@@ -115,36 +108,23 @@ const Referrals = () => {
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={getQRCode}
-            >
-              <QrCode className="w-4 h-4 mr-2" />
-              Получить QR
-            </Button>
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => copyToClipboard(referralLink)}
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Копировать
-            </Button>
-          </div>
-        </Card>
-
-        {/* QR Code Display */}
-        {showQR && (
-          <div className="mb-6">
+          <div className="mb-4">
             <QRGenerator 
               data={referralLink}
               title="QR-код реферальной ссылки"
               description="Покажите этот QR-код друзьям для быстрого перехода"
             />
           </div>
-        )}
+
+          <Button 
+            variant="outline" 
+            className="w-full"
+            onClick={() => copyToClipboard(referralLink)}
+          >
+            <Copy className="w-4 h-4 mr-2" />
+            Копировать ссылку
+          </Button>
+        </Card>
 
         {/* Reward Rules */}
         <Card className="glass-card p-4 mb-6">
