@@ -7,6 +7,7 @@ interface Balance {
   id: string;
   ton_balance: number | null;
   bonus_points: number | null;
+  rub_balance: number | null;
   total_earned: number | null;
   total_spent: number | null;
   updated_at: string;
@@ -20,13 +21,22 @@ export const useBalance = () => {
   const fetchBalance = async (telegramId: number) => {
     try {
       setLoading(true);
+      
+      // Сначала создаем пользователя если его нет
+      await supabase.rpc('create_user_if_not_exists', {
+        telegram_id_param: telegramId,
+        first_name_param: 'User',
+        last_name_param: null,
+        username_param: null
+      });
+
       const { data, error } = await supabase
         .from('user_balances')
         .select('*')
         .eq('user_telegram_id', telegramId)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+      if (error && error.code !== 'PGRST116') {
         throw error;
       }
 
@@ -37,7 +47,8 @@ export const useBalance = () => {
           .insert({
             user_telegram_id: telegramId,
             ton_balance: 0,
-            bonus_points: 1000, // Стартовые бонусы
+            bonus_points: 1000,
+            rub_balance: 2500,
             total_earned: 0,
             total_spent: 0
           })

@@ -228,6 +228,7 @@ export type Database = {
         Row: {
           bonus_points: number | null
           id: string
+          rub_balance: number | null
           ton_balance: number | null
           total_earned: number | null
           total_spent: number | null
@@ -237,6 +238,7 @@ export type Database = {
         Insert: {
           bonus_points?: number | null
           id?: string
+          rub_balance?: number | null
           ton_balance?: number | null
           total_earned?: number | null
           total_spent?: number | null
@@ -246,6 +248,7 @@ export type Database = {
         Update: {
           bonus_points?: number | null
           id?: string
+          rub_balance?: number | null
           ton_balance?: number | null
           total_earned?: number | null
           total_spent?: number | null
@@ -318,6 +321,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_user_if_not_exists: {
+        Args: {
+          telegram_id_param: number
+          first_name_param: string
+          last_name_param?: string
+          username_param?: string
+        }
+        Returns: string
+      }
       process_referral_bonus: {
         Args: { referrer_id: number; purchase_amount: number }
         Returns: undefined

@@ -9,9 +9,10 @@ interface BalanceCardProps {
   currency: string;
   icon: LucideIcon;
   gradient: string;
+  onTopUp?: () => void;
 }
 
-export const BalanceCard = ({ title, amount, currency, icon: Icon, gradient }: BalanceCardProps) => {
+export const BalanceCard = ({ title, amount, currency, icon: Icon, gradient, onTopUp }: BalanceCardProps) => {
   return (
     <Card className="balance-card">
       <div className="flex items-center justify-between mb-4">
@@ -27,9 +28,11 @@ export const BalanceCard = ({ title, amount, currency, icon: Icon, gradient }: B
             </div>
           </div>
         </div>
-        <Button size="sm" variant="outline" className="w-10 h-10 rounded-full p-0">
-          <Plus className="w-4 h-4" />
-        </Button>
+        {onTopUp && (
+          <Button size="sm" variant="outline" className="w-10 h-10 rounded-full p-0" onClick={onTopUp}>
+            <Plus className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </Card>
   );

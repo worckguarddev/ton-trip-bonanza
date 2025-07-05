@@ -61,29 +61,31 @@ const Profile = () => {
   };
 
   const recentTransactions = [
-    {
+    balance?.total_spent && balance.total_spent > 0 ? {
       id: 1,
       type: "purchase",
       description: "Покупка NFT карты",
-      amount: -(balance?.total_spent || 0),
-      date: new Date().toISOString()
-    },
-    {
+      amount: -(balance.total_spent),
+      date: new Date().toISOString(),
+      currency: "рублей"
+    } : null,
+    referrals.length > 0 ? {
       id: 2,
       type: "referral",
       description: "Бонус за рефералов",
       amount: +referrals.reduce((sum, r) => sum + (r.bonus_amount || 0), 0),
-      date: new Date().toISOString()
-    },
-    {
+      date: new Date().toISOString(),
+      currency: "бонусов"
+    } : null,
+    balance?.bonus_points && balance.bonus_points > 0 ? {
       id: 3,
       type: "bonus",
       description: "Начисление бонусов",
-      amount: +(balance?.bonus_points || 0),
+      amount: +(balance.bonus_points),
       date: new Date().toISOString(),
       currency: "бонусов"
-    }
-  ].filter(t => t.amount !== 0);
+    } : null
+  ].filter(Boolean);
 
   if (!user) {
     return (
@@ -153,8 +155,8 @@ const Profile = () => {
             />
             <BalanceCard 
               title="Баланс"
-              amount={balance?.ton_balance || 0}
-              currency="TON"
+              amount={balance?.rub_balance || 0}
+              currency="₽"
               icon={DollarSign}
               gradient="from-green-500 to-emerald-500"
             />
@@ -178,7 +180,7 @@ const Profile = () => {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-red-400">{Math.round(userStats.totalSpent)}</div>
-              <div className="text-xs text-muted-foreground">бонусов потрачено</div>
+              <div className="text-xs text-muted-foreground">рублей потрачено</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-400">{userStats.referrals}</div>
@@ -219,7 +221,7 @@ const Profile = () => {
                         {transaction.amount > 0 ? '+' : ''}{Math.round(transaction.amount)}
                       </span>
                       <span className="text-xs ml-1">
-                        {transaction.currency || 'бонусов'}
+                        {transaction.currency}
                       </span>
                     </div>
                   </div>

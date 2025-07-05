@@ -39,7 +39,6 @@ export const useCards = () => {
 
       if (error) throw error;
       
-      // Safely cast the rarity type
       const typedData = (data || []).map(card => ({
         ...card,
         rarity: card.rarity as 'common' | 'rare' | 'epic' | 'legendary'
@@ -104,19 +103,49 @@ export const useCards = () => {
     }
   };
 
-  const purchaseCard = async (cardId: string, telegramId: number) => {
+  const purchaseCard = async (cardId: string, telegramId: number, cardPrice: number) => {
     try {
       setLoading(true);
-      const { error } = await supabase
+      
+      // Проверяем баланс пользователя
+      const { data: balanceData, error: balanceError } = await supabase
+        .from('user_balances')
+        .select('rub_balance')
+        .eq('user_telegram_id', telegramId)
+        .single();
+
+      if (balanceError || !balanceData) {
+        throw new Error('Не удалось получить баланс');
+      }
+
+      const currentBalance = balanceData.rub_balance || 0;
+      if (currentBalance < cardPrice) {
+        toast.error('Недостаточно средств на балансе');
+        return false;
+      }
+
+      // Покупаем карту
+      const { error: purchaseError } = await supabase
         .from('user_cards')
         .insert({
           user_telegram_id: telegramId,
           card_id: cardId
         });
 
-      if (error) throw error;
+      if (purchaseError) throw purchaseError;
+
+      // Обновляем баланс
+      const { error: updateError } = await supabase
+        .from('user_balances')
+        .update({
+          rub_balance: currentBalance - cardPrice,
+          total_spent: (balanceData.total_spent || 0) + cardPrice
+        })
+        .eq('user_telegram_id', telegramId);
+
+      if (updateError) throw updateError;
       
-      toast.success('Карта успешно приобретена!');
+      toast.success('Карта успешно приобретена за ' + cardPrice + ' рублей!');
       await fetchUserCards(telegramId);
       return true;
     } catch (err) {
@@ -134,7 +163,7 @@ export const useCards = () => {
     try {
       setLoading(true);
       const rentUntil = new Date();
-      rentUntil.setDate(rentUntil.getDate() + 30); // Аренда на 30 дней
+      rentUntil.setDate(rentUntil.getDate() + 30);
 
       const { error } = await supabase
         .from('user_cards')
