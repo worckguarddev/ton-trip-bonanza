@@ -15,6 +15,7 @@ import { useBalance } from "@/hooks/useBalance";
 import { useReferralSystem } from "@/hooks/useReferralSystem";
 import { supabase } from "@/integrations/supabase/client";
 import { TelegramUser } from "@/types/telegram";
+import { useTonWallet } from "@tonconnect/ui-react";
 
 const Cards = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
@@ -28,6 +29,19 @@ const Cards = () => {
   const { availableCards, userCards, loading, fetchAvailableCards, fetchUserCards, purchaseCard, rentCard, withdrawCard } = useCards();
   const { balance, fetchBalance } = useBalance();
   const { processReferralBonus, initializeReferralSystem } = useReferralSystem();
+  const wallet = useTonWallet();
+
+  // Обновляем состояние кошелька при изменении подключения
+  useEffect(() => {
+    if (wallet) {
+      const walletAddress = wallet.account.address;
+      setUserWallet(walletAddress);
+      console.log('TON кошелёк подключен:', walletAddress);
+    } else {
+      setUserWallet(null);
+      console.log('TON кошелёк отключен');
+    }
+  }, [wallet]);
 
   useEffect(() => {
     const initializeUser = async () => {
@@ -37,14 +51,17 @@ const Cards = () => {
         if (telegramUser) {
           setUser(telegramUser);
           
-          // Получаем информацию о кошельке пользователя
+          // Получаем информацию о кошельке пользователя из базы данных
           const { data: userData } = await supabase
             .from('telegram_users')
             .select('wallet_address')
             .eq('telegram_id', telegramUser.id)
             .single();
           
-          setUserWallet(userData?.wallet_address || null);
+          // Если кошелёк не подключен через TON Connect, используем данные из БД
+          if (!wallet && userData?.wallet_address) {
+            setUserWallet(userData.wallet_address);
+          }
           
           // Инициализируем реферальную систему
           await initializeReferralSystem(telegramUser.id);
@@ -56,7 +73,10 @@ const Cards = () => {
         // Тестовые данные
         const testUser = { id: 123456789, first_name: "Test", last_name: "User" };
         setUser(testUser);
-        setUserWallet("EQD..._test_wallet_address"); // Тестовый кошелёк
+        // Для тестов проверяем подключен ли TON кошелёк
+        if (!wallet) {
+          setUserWallet("EQD..._test_wallet_address"); // Тестовый кошелёк только если нет TON Connect
+        }
         await fetchUserCards(testUser.id);
         await fetchBalance(testUser.id);
       }
@@ -65,7 +85,7 @@ const Cards = () => {
     };
 
     initializeUser();
-  }, []);
+  }, [wallet]); // Добавляем wallet в зависимости
 
   const handlePurchase = async (id: string) => {
     if (!user?.id) {
